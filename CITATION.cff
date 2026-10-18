@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite it as below."
+title: "zh-ipi-bench: A Chinese-native benchmark for indirect prompt injection"
+type: software
+authors:
+  - family-names: "Wu"
+    given-names: "Jiacheng"
+version: 0.0.1
+repository-code: "https://github.com/JiachengWu591/zh-ipi-bench"
+license: MIT
+keywords:
+  - prompt injection
+  - indirect prompt injection
+  - LLM security
+  - Chinese
+  - benchmark

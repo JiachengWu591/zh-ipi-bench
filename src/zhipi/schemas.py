@@ -1,0 +1,129 @@
+"""Data contracts for the benchmark.
+
+Frozen dataclasses rather than bare dicts, so "what a sample is" can be pointed
+at in code. Construction validates and raises; there is no "return None and let
+the caller decide" path.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import Any
+
+CARRIERS: tuple[str, ...] = ("issue", "rag_doc", "email", "web_html", "tool_output")
+LANGUAGES: tuple[str, ...] = ("zh", "en")
+LABELS: tuple[str, ...] = ("injected", "benign")
+
+# Same shape as injection-blast-radius's issue ids, so every sample can be fed to
+# that pipeline unchanged. `\Z`, not `$`: `$` also matches before a trailing
+# newline, which is how a 65-character id once got through a {1,64} bound there.
+_SAMPLE_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}\Z")
+
+
+class MalformedSample(ValueError):
+    """A sample or intent did not match the expected shape. Always fatal."""
+
+
+@dataclass(frozen=True)
+class Intent:
+    """What the attacker wants, stated once per language.
+
+    The goal is held fixed across carriers and transforms; only the delivery
+    varies. Every intent targets this project's own sandbox and the fixed fake
+    placeholder secret, never a real product, service, or person.
+    """
+
+    intent_id: str
+    technique: str
+    text_zh: str
+    text_en: str
+    rationale: str
+
+    def __post_init__(self) -> None:
+        if not _SAMPLE_ID.match(self.intent_id):
+            raise MalformedSample(f"intent_id {self.intent_id!r} is not id-shaped")
+        for name in ("technique", "text_zh", "text_en", "rationale"):
+            if not getattr(self, name).strip():
+                raise MalformedSample(f"intent {self.intent_id!r}: {name} is empty")
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Intent:
+        try:
+            return cls(**{f: data[f] for f in cls.__dataclass_fields__})
+        except KeyError as exc:
+            raise MalformedSample(f"intent is missing field {exc}") from exc
+
+
+@dataclass(frozen=True)
+class Sample:
+    """One evaluation item: untrusted text plus its ground truth."""
+
+    sample_id: str
+    label: str
+    carrier: str
+    language: str
+    transforms: tuple[str, ...]
+    text: str
+    intent_id: str | None = None
+    plaintext_intent: str = ""
+    """What an obfuscated payload actually asks for, stated plainly.
+
+    Required for every injected sample: a zero-width-split or code-mixed payload
+    is exactly the kind a plaintext review of the dataset would miss, so the
+    declared intent is what keeps the safety review effective on it.
+    """
+    stratum: str = ""
+    """For benign samples: which hard-negative family it belongs to."""
+
+    def __post_init__(self) -> None:
+        if not _SAMPLE_ID.match(self.sample_id):
+            raise MalformedSample(f"sample_id {self.sample_id!r} is not id-shaped")
+        if self.label not in LABELS:
+            raise MalformedSample(f"{self.sample_id}: bad label {self.label!r}")
+        if self.carrier not in CARRIERS:
+            raise MalformedSample(f"{self.sample_id}: bad carrier {self.carrier!r}")
+        if self.language not in LANGUAGES:
+            raise MalformedSample(f"{self.sample_id}: bad language {self.language!r}")
+        if not self.text.strip():
+            raise MalformedSample(f"{self.sample_id}: empty text")
+        if self.label == "injected":
+            if not self.intent_id or not self.plaintext_intent.strip():
+                raise MalformedSample(
+                    f"{self.sample_id}: injected samples need intent_id and "
+                    "plaintext_intent"
+                )
+        elif self.intent_id is not None or self.transforms:
+            raise MalformedSample(
+                f"{self.sample_id}: benign samples carry no intent or transforms"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "sample_id": self.sample_id,
+            "label": self.label,
+            "carrier": self.carrier,
+            "language": self.language,
+            "transforms": list(self.transforms),
+            "text": self.text,
+            "intent_id": self.intent_id,
+            "plaintext_intent": self.plaintext_intent,
+            "stratum": self.stratum,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Sample:
+        try:
+            return cls(
+                sample_id=data["sample_id"],
+                label=data["label"],
+                carrier=data["carrier"],
+                language=data["language"],
+                transforms=tuple(data.get("transforms", ())),
+                text=data["text"],
+                intent_id=data.get("intent_id"),
+                plaintext_intent=data.get("plaintext_intent", ""),
+                stratum=data.get("stratum", ""),
+            )
+        except KeyError as exc:
+            raise MalformedSample(f"sample is missing field {exc}") from exc

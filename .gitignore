@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+*.egg-info/
+dist/
+
+# Generated until a release is cut; see docs/DATA_CARD.md.
+data/generated/*
+!data/generated/.gitkeep
+
+# Raw model outputs / run logs can be large and may echo prompts.
+results/raw/

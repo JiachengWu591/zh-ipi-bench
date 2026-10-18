@@ -1,0 +1,36 @@
+[project]
+name = "zh-ipi-bench"
+version = "0.0.1"
+description = "A Chinese-native benchmark for indirect prompt injection: carriers, language-specific transforms, and a defense-evaluation harness."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []  # the core (schemas, transforms, carriers, stats) is stdlib-only on purpose
+
+[project.optional-dependencies]
+# Real detectors / victim models. Not needed to build or test the dataset.
+eval = [
+    "openai>=1.40",        # DeepSeek is OpenAI-compatible (see CLAUDE.md)
+    "transformers>=4.50",
+    "torch",
+]
+dev = ["pytest>=7.4", "ruff", "mypy"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zhipi"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"

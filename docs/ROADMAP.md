@@ -1,0 +1,31 @@
+# Roadmap (8 weeks, one phase = one commit)
+
+Each phase ends with a stop: show the result, get confirmation, then continue.
+
+| Phase | Weeks | Deliverable | Done when |
+|---|---|---|---|
+| 0 — Scaffold *(this commit)* | 0 | Repo layout, schemas, 4 transforms, 5 carriers, defense interface, keyword baselines, Wilson CIs, tests | `pytest` green; `python -m zhipi.build` writes the v0 file |
+| 1 — Real detectors | 1–2 | Adapters for Prompt Guard 2, Qwen3Guard (as labelled control), a DeepSeek LLM-judge, and `ibr` audit; first full run on v0 | One results table with CIs; every detector pinned to a revision |
+| 2 — Data | 2–4 | 6 → ~20 intents; planned transforms (`pinyin`, `trad_simp`, `homophone`, `char_decomp`); small de-identified real-text benign set; second-annotator agreement | ~1,500 samples; Cohen's κ reported; data card complete |
+| 3 — Analysis | 4–6 | Ablations by transform / carrier / intent; FPR by stratum; variance across repeats | The headline figure and 3 supported claims, each with an interval |
+| 4 — Structural layer | 6–7 | `run_isolated` adapter: end-to-end ASR with the audit bypassed, Chinese vs English | Same table as injection-blast-radius's matrix, on the Chinese set |
+| 5 — Release | 7–8 | Hugging Face dataset, technical report (arXiv-ready), one-command reproduction, CI | A stranger can reproduce the headline figure from a clean clone |
+
+## Compute plan
+
+Dev machine: RTX 4060 Laptop, 8 GB VRAM (checked with `nvidia-smi`).
+
+- Fits (expected, **verify**): Prompt Guard 2 86M, Qwen3Guard-Gen-0.6B, and a
+  ~4B victim model quantized to 4-bit.
+- Does not fit locally: anything ≥ 8B at fp16. Use the DeepSeek API for those and
+  budget the cost before Phase 1 (each LLM defense × 226+ samples × 3 repeats).
+- Cache every API response keyed by (model, revision, prompt hash) so reruns are
+  free and the results are auditable.
+
+## Decision points
+
+- After Phase 1: if every real detector is already near-perfect on v0, the
+  transforms are too weak — strengthen them before scaling the data.
+- After Phase 2: if κ is low, fix the annotation guide before adding volume.
+- If a close neighbour benchmark appears (see `RELATED_WORK.md`), narrow the
+  claim to the transform + hard-negative + structural-layer combination.
