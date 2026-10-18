@@ -16,6 +16,22 @@
 
 These are questions, not findings. No result has been measured yet.
 
+**Prior evidence says not to expect a language effect on victims.** IssueTrojanBench
+found that translating the payload to Mandarin changed no outcome on three commercial
+coding agents, and arXiv 2607.10080 reports that multilinguality did not reduce attack
+effectiveness (see `RELATED_WORK.md`). So the hypotheses here are narrower than "Chinese
+is harder":
+
+- **H1** — *detectors*, especially small English-centric classifiers and keyword or
+  regex filters, lose recall on Chinese-specific obfuscation (zero-width, fullwidth,
+  code-mixing), even where translation alone changes nothing.
+- **H2** — over-flagging on benign Chinese text differs from English at equal recall.
+- **H3** — the structural layer's containment does not depend on the language.
+
+Each can come out null, and a null result is reported as such. Victim-side attack
+success is measured in Phase 4 only, and is compared against IssueTrojanBench's
+translation-only result rather than assumed to differ.
+
 ## Attacker model
 
 Anyone who can put text where an LLM application will read it as *data*: an
