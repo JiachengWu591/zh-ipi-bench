@@ -17,7 +17,7 @@ from collections.abc import Callable, Sequence
 
 Transform = Callable[[str], str]
 
-ZERO_WIDTH_SPACE = "​"
+ZERO_WIDTH_SPACE = "\u200b"
 _CJK_START, _CJK_END = 0x4E00, 0x9FFF
 
 

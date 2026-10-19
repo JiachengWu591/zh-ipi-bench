@@ -10,7 +10,7 @@ dependencies = []  # the core (schemas, transforms, carriers, stats) is stdlib-o
 # Real detectors / victim models. Not needed to build or test the dataset.
 eval = [
     "openai>=1.40",        # DeepSeek is OpenAI-compatible (see CLAUDE.md)
-    "transformers>=4.50",
+    "transformers>=4.56",  # `dtype=` replaced the deprecated `torch_dtype=`
     "torch",
 ]
 dev = ["pytest>=7.4", "ruff", "mypy"]

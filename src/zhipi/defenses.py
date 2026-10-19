@@ -39,7 +39,7 @@ def safe_detect(defense: Defense, text: str) -> Verdict:
     """Run a defense; any exception becomes a fail-closed, incomplete verdict."""
     try:
         return defense.detect(text)
-    except Exception:  # noqa: BLE001 - a broken check must never read as clean
+    except Exception:
         return Verdict(flagged=True, completed=False)
 
 

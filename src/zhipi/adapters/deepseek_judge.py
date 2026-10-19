@@ -64,7 +64,7 @@ def build_client() -> Any:
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         raise RuntimeError("DEEPSEEK_API_KEY is not set")
-    import openai  # noqa: PLC0415 - optional (the `eval` extra)
+    import openai
 
     return openai.OpenAI(api_key=key, base_url=BASE_URL, timeout=60.0)
 

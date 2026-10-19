@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..defenses import Verdict
+from ._hf import resolved_revision
 
 MODEL_ID = "Qwen/Qwen3Guard-Gen-0.6B"
 
@@ -63,8 +64,8 @@ class Qwen3GuardRunner:
         device: str | None = None,
         max_new_tokens: int = 64,
     ) -> None:
-        import torch  # noqa: PLC0415
-        from transformers import (  # noqa: PLC0415
+        import torch
+        from transformers import (
             AutoModelForCausalLM,
             AutoTokenizer,
         )
@@ -77,10 +78,10 @@ class Qwen3GuardRunner:
         # float32 on CPU: bf16 matmuls are slow there and the model is small.
         dtype = torch.float32 if self.device == "cpu" else "auto"
         model: Any = AutoModelForCausalLM.from_pretrained(
-            model_id, revision=revision, torch_dtype=dtype
+            model_id, revision=revision, dtype=dtype
         )
         self.model = model.to(self.device).eval()
-        self.revision = getattr(self.model.config, "_commit_hash", None) or revision
+        self.revision = resolved_revision(model_id, revision)
         self._memo: dict[str, tuple[str | None, tuple[str, ...]]] = {}
 
     def classify(self, text: str) -> tuple[str | None, tuple[str, ...]]:

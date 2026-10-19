@@ -74,7 +74,7 @@ def make_defenses(
     if kind == "keyword-zh":
         return [ZH_KEYWORDS], {"role": "sanity baseline"}
     if kind == "prompt-guard-2":
-        from .adapters.prompt_guard import (  # noqa: PLC0415
+        from .adapters.prompt_guard import (
             PromptGuard2Defense,
             PromptGuard2Runner,
         )
@@ -82,7 +82,7 @@ def make_defenses(
         runner = PromptGuard2Runner(revision=args.pg2_revision)
         return [PromptGuard2Defense(runner, threshold=0.5)], runner.metadata()
     if kind == "qwen3guard":
-        from .adapters.qwen3guard import (  # noqa: PLC0415
+        from .adapters.qwen3guard import (
             RULES,
             Qwen3GuardDefense,
             Qwen3GuardRunner,
@@ -91,7 +91,7 @@ def make_defenses(
         qrunner = Qwen3GuardRunner(revision=args.qwen_revision)
         return [Qwen3GuardDefense(qrunner, r) for r in RULES], qrunner.metadata()
     if kind == "deepseek-judge":
-        from .adapters.deepseek_judge import DeepSeekJudge  # noqa: PLC0415
+        from .adapters.deepseek_judge import DeepSeekJudge
 
         model = args.judge_model or os.environ.get("ZHIPI_JUDGE_MODEL") or DEFAULT_JUDGE_MODEL
         judges = [
@@ -100,7 +100,7 @@ def make_defenses(
         ]
         return list(judges), judges[0].metadata()
     if kind == "ibr-audit":
-        from .adapters.ibr_adapter import IbrAuditDefense  # noqa: PLC0415
+        from .adapters.ibr_adapter import IbrAuditDefense
 
         return [IbrAuditDefense()], {"role": "injection-blast-radius audit_only"}
     raise ValueError(f"unknown defense {kind!r} (have: {KINDS})")
@@ -139,7 +139,7 @@ def _version(package: str) -> str | None:
 
 def _git_state() -> dict[str, object]:
     def run(*cmd: str) -> str:
-        return subprocess.run(  # noqa: S603
+        return subprocess.run(
             cmd, cwd=ROOT, capture_output=True, text=True, check=False
         ).stdout.strip()
 

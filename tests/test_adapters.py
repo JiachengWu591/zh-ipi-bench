@@ -13,6 +13,19 @@ from zhipi.adapters import qwen3guard as qg
 from zhipi.cache import ResponseCache, make_key
 from zhipi.defenses import safe_detect
 
+# --- revision pinning -----------------------------------------------------
+
+
+def test_resolved_revision_reads_the_hub_cache_ref(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from zhipi.adapters._hf import resolved_revision
+
+    refs = tmp_path / "models--org--name" / "refs"
+    refs.mkdir(parents=True)
+    (refs / "main").write_text("a" * 40 + "\n", encoding="utf-8")
+    assert resolved_revision("org/name", None, tmp_path) == "a" * 40
+    assert resolved_revision("org/name", "b" * 40, tmp_path) == "b" * 40  # full hash passes through
+    assert resolved_revision("org/other", None, tmp_path) is None
+
 
 # --- Prompt Guard 2 -------------------------------------------------------
 

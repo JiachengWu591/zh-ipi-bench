@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..defenses import Verdict
+from ._hf import resolved_revision
 
 MODEL_ID = "meta-llama/Llama-Prompt-Guard-2-86M"
 MAX_TOKENS = 512
@@ -52,8 +53,8 @@ class PromptGuard2Runner:
         revision: str | None = None,
         device: str | None = None,
     ) -> None:
-        import torch  # noqa: PLC0415 - heavy, optional (the `eval` extra)
-        from transformers import (  # noqa: PLC0415
+        import torch
+        from transformers import (
             AutoModelForSequenceClassification,
             AutoTokenizer,
         )
@@ -67,7 +68,7 @@ class PromptGuard2Runner:
         )
         self.model = model.to(self.device).eval()
         self._malicious = malicious_index(self.model.config.id2label)
-        self.revision = getattr(self.model.config, "_commit_hash", None) or revision
+        self.revision = resolved_revision(model_id, revision)
         self._memo: dict[str, float] = {}
 
     def score(self, text: str) -> float:
