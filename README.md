@@ -44,10 +44,13 @@ src/zhipi/
   build.py        intents × carriers × transforms (+ benign controls) -> JSONL
   defenses.py     Defense protocol, fail-closed wrapper, keyword sanity baselines
   evaluate.py     run a defense, summarize per group with 95% Wilson intervals
-  adapters/       injection-blast-radius audit as a Defense
+  adapters/       prompt_guard · qwen3guard · deepseek_judge · ibr_adapter (each a Defense)
+  cache.py        append-only response cache (failures are never cached)
+  run_eval.py     run detectors over the dataset -> raw rows + run metadata
+  report.py       raw rows -> results/phase1.md (never calls a model)
 data/seed/        hand-written intents and hard-negative benign text
 docs/             threat model, related work, roadmap, data card
-tests/            26 tests
+tests/            offline tests (no model, network, or key needed)
 ```
 
 v0 data: 226 samples (210 injected, 16 benign). Draft [data card](docs/DATA_CARD.md).
@@ -59,6 +62,17 @@ uv venv
 uv pip install -e ".[dev]"
 python -m pytest
 python -m zhipi.build        # writes data/generated/v0.jsonl
+```
+
+Running real detectors (Phase 1; needs the `eval` extra, plus a Hugging Face token
+for the gated Prompt Guard 2 and `DEEPSEEK_API_KEY` for the judge, which makes
+billed API calls):
+
+```bash
+uv pip install -e ".[eval]"
+python -m zhipi.run_eval --defense qwen3guard --defense prompt-guard-2
+python -m zhipi.run_eval --defense deepseek-judge --repeats 3 --dry-run   # count calls first
+python -m zhipi.report       # writes results/phase1.md
 ```
 
 ## Sanity baselines are not results

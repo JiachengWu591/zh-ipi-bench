@@ -16,6 +16,9 @@ class Row:
     sample: Sample
     flagged: bool
     completed: bool
+    score: float | None = None
+    detail: str = ""
+    repeat: int = 0
 
 
 @dataclass(frozen=True)
@@ -29,11 +32,22 @@ class Cell:
     ci_high: float | None
 
 
-def evaluate(defense: Defense, samples: Iterable[Sample]) -> list[Row]:
+def evaluate(
+    defense: Defense, samples: Iterable[Sample], *, repeat: int = 0
+) -> list[Row]:
     rows: list[Row] = []
     for sample in samples:
         verdict = safe_detect(defense, sample.text)
-        rows.append(Row(sample, verdict.flagged, verdict.completed))
+        rows.append(
+            Row(
+                sample,
+                verdict.flagged,
+                verdict.completed,
+                score=verdict.score,
+                detail=verdict.detail,
+                repeat=repeat,
+            )
+        )
     return rows
 
 
@@ -82,6 +96,11 @@ def summarize(
 
 def by_transform(sample: Sample) -> str:
     return "+".join(sample.transforms) or "plain"
+
+
+def by_condition(sample: Sample) -> str:
+    """Language and transform together, e.g. `zh/zero_width` or `en/plain`."""
+    return f"{sample.language}/{by_transform(sample)}"
 
 
 def by_carrier(sample: Sample) -> str:

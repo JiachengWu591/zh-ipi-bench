@@ -55,6 +55,13 @@ about *Chinese-specific obfuscation*, and a null result is a legitimate outcome.
   language list and whether Chinese is covered were **not verified**; read the
   model card, and treat Chinese performance as an open question this benchmark
   can answer.
+  *Update (model card read 2026-10-19):* the card says the model was **evaluated** on
+  English, French, German, Hindi, Italian, Portuguese, Spanish and Thai. Chinese is
+  not in that list, so a Chinese result is a measurement outside the stated
+  evaluation, not a regression from a claimed capability. The repo is gated (Llama 4
+  Community License plus an access form), the context window is 512 tokens, and the
+  card advises splitting longer inputs into segments (`adapters/prompt_guard.py` does
+  this and takes the max).
 - **Qwen3Guard** ([arXiv 2510.14276](https://arxiv.org/abs/2510.14276); Gen-0.6B
   etc. on Hugging Face, Apache-2.0). Evaluated on Chinese and supports 119
   languages, but its documented scope is harmful-content moderation, **not**

@@ -17,6 +17,9 @@ from typing import Protocol
 class Verdict:
     flagged: bool
     score: float | None = None
+    detail: str = ""
+    """The detector's raw label (e.g. "Unsafe|Jailbreak", "high_risk"), kept so the
+    flagging rule can be changed after the run without re-running the model."""
     completed: bool = True
     """False when the defense errored or timed out.
 

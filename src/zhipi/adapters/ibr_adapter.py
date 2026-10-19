@@ -57,6 +57,7 @@ class IbrAuditDefense:
         verdict = self._audit_only(issue)
         return Verdict(
             flagged=verdict.risk_level in self._flag_on,
+            detail=str(verdict.risk_level),
             completed=bool(verdict.completed),
         )
 
