@@ -47,6 +47,27 @@ STOCHASTIC = {"deepseek-judge", "ibr-audit"}  # repeated calls can disagree
 DEFAULT_JUDGE_MODEL = "deepseek-v4-flash"
 
 
+def load_dotenv(path: Path = ROOT / ".env") -> list[str]:
+    """Load KEY=VALUE lines from a git-ignored `.env` into the environment.
+
+    Returns the *names* that were set (never the values). Already-set variables win,
+    so a real environment variable overrides the file, and empty values are skipped.
+    """
+    if not path.exists():
+        return []
+    loaded: list[str] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, value = line.partition("=")
+        name, value = name.strip(), value.strip().strip("\"'")
+        if name and value and name not in os.environ:
+            os.environ[name] = value
+            loaded.append(name)
+    return loaded
+
+
 def load_samples(path: Path) -> list[Sample]:
     if not path.exists():
         print(f"{path} not found; building it from the seed files")
@@ -178,6 +199,9 @@ def main() -> None:
     parser.add_argument("--qwen-revision", default=None)
     args = parser.parse_args()
 
+    loaded = load_dotenv()
+    if loaded:
+        print(f"loaded from .env: {', '.join(loaded)}")  # names only, never values
     samples = load_samples(args.data)
     if args.limit:
         samples = samples[:: max(1, len(samples) // args.limit)]

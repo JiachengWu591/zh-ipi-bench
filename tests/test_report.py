@@ -56,6 +56,24 @@ def test_make_defenses_builds_baselines_without_heavy_imports() -> None:
     assert [d.name for d in defenses] == ["keyword-en"]
 
 
+def test_load_dotenv_sets_names_skips_empty_and_never_overrides(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    env = tmp_path / ".env"
+    env.write_text(
+        "# comment\nZHIPI_T_NEW=abc\nZHIPI_T_EMPTY=\nZHIPI_T_KEEP='from-file'\nnot a pair\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("ZHIPI_T_NEW", raising=False)
+    monkeypatch.delenv("ZHIPI_T_EMPTY", raising=False)
+    monkeypatch.setenv("ZHIPI_T_KEEP", "from-shell")
+    assert run_eval.load_dotenv(env) == ["ZHIPI_T_NEW"]
+    import os
+
+    assert os.environ["ZHIPI_T_NEW"] == "abc"
+    assert "ZHIPI_T_EMPTY" not in os.environ
+    assert os.environ["ZHIPI_T_KEEP"] == "from-shell"
+    os.environ.pop("ZHIPI_T_NEW")  # set directly by the loader; don't leak into later tests
+
+
 def test_dry_run_makes_no_calls_and_writes_nothing(tmp_path, monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     data = tmp_path / "v0.jsonl"
     build.write_jsonl(_samples(), data)
