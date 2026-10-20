@@ -147,7 +147,15 @@ def test_judge_invalid_answer_fails_closed_and_is_not_cached() -> None:
     judge = dj.DeepSeekJudge(model="m", client=_fake_client(bad, calls), cache=cache)
     verdict = safe_detect(judge, "t")
     assert verdict.flagged is True and verdict.completed is False
+    assert verdict.detail == "error:ValueError"  # type only, never the message
     assert len(cache) == 0
+
+
+def test_judge_disables_thinking_so_the_forced_tool_choice_is_accepted() -> None:
+    calls: list[dict[str, object]] = []
+    args = json.dumps({"reason": "r", "risk_level": "safe"})
+    dj.DeepSeekJudge(model="m", client=_fake_client(args, calls)).detect("t")
+    assert calls[0]["extra_body"] == {"thinking": {"type": "disabled"}}
 
 
 def test_judge_without_a_key_fails_closed(monkeypatch) -> None:  # type: ignore[no-untyped-def]

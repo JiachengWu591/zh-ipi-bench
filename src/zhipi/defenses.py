@@ -39,8 +39,10 @@ def safe_detect(defense: Defense, text: str) -> Verdict:
     """Run a defense; any exception becomes a fail-closed, incomplete verdict."""
     try:
         return defense.detect(text)
-    except Exception:
-        return Verdict(flagged=True, completed=False)
+    except Exception as exc:
+        # Keep only the exception *type* so a failed run is diagnosable without
+        # ever copying a message that might echo a request, key, or sample text.
+        return Verdict(flagged=True, completed=False, detail=f"error:{type(exc).__name__}")
 
 
 @dataclass(frozen=True)

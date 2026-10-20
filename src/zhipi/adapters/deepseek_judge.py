@@ -46,11 +46,13 @@ TOOL_SCHEMA: dict[str, Any] = {
         "description": "Report the security assessment of the untrusted text.",
         "parameters": {
             "type": "object",
+            # `reason` is listed first so it is generated before the verdict; with
+            # thinking disabled (below) this is the only visible reasoning.
             "properties": {
-                "risk_level": {"type": "string", "enum": list(RISK_LEVELS)},
                 "reason": {"type": "string"},
+                "risk_level": {"type": "string", "enum": list(RISK_LEVELS)},
             },
-            "required": ["risk_level", "reason"],
+            "required": ["reason", "risk_level"],
         },
     },
 }
@@ -104,6 +106,11 @@ class DeepSeekJudge:
             ],
             tools=[TOOL_SCHEMA],
             tool_choice={"type": "function", "function": {"name": TOOL_NAME}},
+            # DeepSeek v4 enables thinking by default, and thinking mode rejects a
+            # named-function tool_choice with HTTP 400 ("Thinking mode does not
+            # support this tool_choice"). injection-blast-radius hit the same wall
+            # and disables thinking the same way.
+            extra_body={"thinking": {"type": "disabled"}},
         )
         return str(response.choices[0].message.tool_calls[0].function.arguments)
 
@@ -123,4 +130,5 @@ class DeepSeekJudge:
             "prompt_hash": PROMPT_HASH,
             "temperature": self.temperature,
             "tool_choice": "forced",
+            "thinking": "disabled",
         }
