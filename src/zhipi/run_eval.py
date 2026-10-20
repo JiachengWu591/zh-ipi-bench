@@ -37,6 +37,7 @@ KINDS = (
     "keyword-en",
     "keyword-zh",
     "prompt-guard-2",
+    "community-mbert",
     "qwen3guard",
     "deepseek-judge",
     "ibr-audit",
@@ -45,6 +46,7 @@ STOCHASTIC = {"deepseek-judge", "ibr-audit"}  # repeated calls can disagree
 # The model id below is the one injection-blast-radius's CLAUDE.md names. It is
 # not verified here; override with --judge-model if the provider says otherwise.
 DEFAULT_JUDGE_MODEL = "deepseek-v4-flash"
+COMMUNITY_MODEL = "devndeploy/bert-prompt-injection-detector"
 
 
 def load_dotenv(path: Path = ROOT / ".env") -> list[str]:
@@ -102,6 +104,24 @@ def make_defenses(
 
         runner = PromptGuard2Runner(revision=args.pg2_revision)
         return [PromptGuard2Defense(runner, threshold=0.5)], runner.metadata()
+    if kind == "community-mbert":
+        # Stand-in for the gated Prompt Guard 2: a community multilingual-BERT
+        # injection classifier whose card lists Chinese among its training
+        # languages. Unvetted: unknown author, metrics with no stated test set.
+        from .adapters.prompt_guard import (
+            PromptGuard2Defense,
+            PromptGuard2Runner,
+        )
+
+        crunner = PromptGuard2Runner(
+            model_id=COMMUNITY_MODEL,
+            revision=args.community_revision,
+            positive_labels=("injection",),
+            role="community model, unvetted (stand-in for gated Prompt Guard 2)",
+        )
+        return [
+            PromptGuard2Defense(crunner, threshold=0.5, name="community-mbert-injection")
+        ], crunner.metadata()
     if kind == "qwen3guard":
         from .adapters.qwen3guard import (
             RULES,
@@ -197,6 +217,7 @@ def main() -> None:
     parser.add_argument("--judge-model", default="")
     parser.add_argument("--pg2-revision", default=None)
     parser.add_argument("--qwen-revision", default=None)
+    parser.add_argument("--community-revision", default=None)
     args = parser.parse_args()
 
     loaded = load_dotenv()

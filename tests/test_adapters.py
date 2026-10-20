@@ -35,6 +35,10 @@ def test_malicious_index_finds_the_single_malicious_label() -> None:
     assert pg.malicious_index({0: "malicious", 1: "benign"}) == 0
 
 
+def test_malicious_index_accepts_a_custom_positive_label() -> None:
+    assert pg.malicious_index({0: "SAFE", 1: "INJECTION"}, ("injection",)) == 1
+
+
 @pytest.mark.parametrize("labels", [{0: "A", 1: "B"}, {0: "MALICIOUS", 1: "malicious"}])
 def test_malicious_index_refuses_to_guess(labels: dict[int, str]) -> None:
     with pytest.raises(ValueError):

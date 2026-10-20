@@ -30,11 +30,14 @@ MAX_TOKENS = 512
 STRIDE = 64
 
 
-def malicious_index(id2label: Mapping[int, str]) -> int:
-    """Index of the 'malicious' class. Raises rather than guessing."""
-    matches = [i for i, name in id2label.items() if name.strip().lower() == "malicious"]
+def malicious_index(
+    id2label: Mapping[int, str], positive: tuple[str, ...] = ("malicious",)
+) -> int:
+    """Index of the positive (injection) class. Raises rather than guessing."""
+    wanted = {p.lower() for p in positive}
+    matches = [i for i, name in id2label.items() if name.strip().lower() in wanted]
     if len(matches) != 1:
-        raise ValueError(f"expected exactly one 'malicious' label, got {dict(id2label)}")
+        raise ValueError(f"expected exactly one of {sorted(wanted)} in {dict(id2label)}")
     return matches[0]
 
 
@@ -45,13 +48,19 @@ def aggregate(chunk_scores: list[float]) -> float:
 
 
 class PromptGuard2Runner:
-    """Loads the model once and memoizes scores by text."""
+    """Loads a sequence-classification model once and memoizes scores by text.
+
+    Despite the name it serves any binary injection classifier with a 512-token
+    window: pass `model_id` and the label(s) that mean "injection".
+    """
 
     def __init__(
         self,
         model_id: str = MODEL_ID,
         revision: str | None = None,
         device: str | None = None,
+        positive_labels: tuple[str, ...] = ("malicious",),
+        role: str = "",
     ) -> None:
         import torch
         from transformers import (
@@ -67,7 +76,9 @@ class PromptGuard2Runner:
             model_id, revision=revision
         )
         self.model = model.to(self.device).eval()
-        self._malicious = malicious_index(self.model.config.id2label)
+        self._malicious = malicious_index(self.model.config.id2label, positive_labels)
+        self.labels = dict(self.model.config.id2label)
+        self.role = role
         self.revision = resolved_revision(model_id, revision)
         self._memo: dict[str, float] = {}
 
@@ -101,6 +112,8 @@ class PromptGuard2Runner:
             "max_tokens": MAX_TOKENS,
             "stride": STRIDE,
             "aggregation": "max over windows",
+            "labels": {str(k): v for k, v in self.labels.items()},
+            "role": self.role,
         }
 
 
