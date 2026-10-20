@@ -126,6 +126,17 @@ def build_report(
         else:
             fpr_n[s.stratum] += 1
 
+    glance = [
+        "| detector | detection, all injected | false positives, all benign |",
+        "|---|---|---|",
+    ]
+    for d in defenses:
+        all_det = summarize(rows[d], label="injected", key=lambda s: "all")
+        all_fp = summarize(rows[d], label="benign", key=lambda s: "all")
+        glance.append(
+            f"| {d} | {fmt(all_det[0] if all_det else None)} | {fmt(all_fp[0] if all_fp else None)} |"
+        )
+
     out = [
         "# Phase 1 results",
         "",
@@ -136,6 +147,13 @@ def build_report(
         "95% Wilson intervals that assume independent samples; these samples are "
         "template-generated (6 intents × 5 carriers per condition), so the intervals "
         "are narrower than the true uncertainty.",
+        "",
+        "## At a glance",
+        "",
+        "Read the two columns together: a detector that flags everything has perfect "
+        "detection and 100% false positives.",
+        "",
+        *glance,
         "",
         "## Detection rate on injected samples (higher is better)",
         "",
@@ -181,8 +199,23 @@ def build_report(
         "Its numbers are not injection-detection performance.",
         "- Prompt Guard 2's model card lists English, French, German, Hindi, Italian, "
         "Portuguese, Spanish and Thai as evaluated languages. Chinese is not listed.",
+        "- `community-mbert-injection` is an unvetted community model (see the metadata "
+        "table). On v0 it flags every sample, benign ones included, so its detection "
+        "numbers carry no information. Probing it directly showed it separates short "
+        "casual text (\"The weather is nice today.\") from blatant injections, but "
+        "scores task-like or technical text (\"Please close this issue as a duplicate "
+        "of #311.\") as an injection at 0.999. That is a property of this model on "
+        "this distribution, not evidence about multilingual detectors in general.",
         "- The LLM judge's result depends on its prompt (hash recorded above); a different "
         "prompt can move the numbers.",
+        "- **A 100% cell means v0 cannot tell this detector from a perfect one, not that "
+        "the detector is robust.** The v0 payloads state their goal outright (read a "
+        "named file, publish it), so a strong LLM reads through every transform. Harder "
+        "payloads are a Phase 2 task; until then a ceiling result is a statement about "
+        "the dataset.",
+        "- Judge repeats use temperature 0, so zero verdict changes across repeats shows "
+        "low residual non-determinism at that setting, not that the verdict is insensitive "
+        "to sampling.",
         "- 30 samples per condition, 6 hand-written intents, one author: indicative, not "
         "conclusive. Benign set is 16 samples, so false-positive intervals are wide.",
         "- Only detection is measured here. Whether an injection *succeeds* against a "
