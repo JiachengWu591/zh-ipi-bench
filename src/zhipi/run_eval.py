@@ -218,6 +218,17 @@ def _git_state() -> dict[str, object]:
     return {"commit": run("git", "rev-parse", "HEAD"), "dirty": bool(run("git", "status", "--porcelain"))}
 
 
+def meta_key(kind: str, args: argparse.Namespace) -> str:
+    """Key under which a run's provenance is stored in run_meta.json.
+
+    `hf-classifier` is one kind for many models, so it is keyed by model id; keying by
+    kind alone let the second model silently overwrite the first one's pinned revision.
+    """
+    if kind == "hf-classifier":
+        return f"hf-classifier:{args.hf_model}"
+    return kind
+
+
 def write_meta(
     kind: str, defense_meta: dict[str, object], data_path: Path, out_dir: Path
 ) -> None:
@@ -289,7 +300,7 @@ def main() -> None:
                 flagged = sum(r.flagged and r.completed for r in rows)
                 print(f"{defense.name} repeat {repeat}: {done}/{len(rows)} completed, "
                       f"{flagged} flagged -> {path}")
-        write_meta(kind, meta, args.data, args.out_dir)
+        write_meta(meta_key(kind, args), meta, args.data, args.out_dir)
 
 
 if __name__ == "__main__":

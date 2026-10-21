@@ -41,6 +41,22 @@ def test_v1_report_has_tier_and_new_strata(tmp_path) -> None:  # type: ignore[no
     assert "19 hand-written intents" in text
 
 
+def test_two_hf_models_keep_separate_provenance(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Regression: both used to be stored under 'hf-classifier', so the second run
+    erased the first one's model id and pinned revision."""
+    data = tmp_path / "v0.jsonl"
+    data.write_text("{}\n", encoding="utf-8")
+    for model, rev in (("org/model-a", "a" * 40), ("org/model-b", "b" * 40)):
+        key = run_eval.meta_key("hf-classifier", argparse.Namespace(hf_model=model))
+        run_eval.write_meta(key, {"model_id": model, "revision": rev}, data, tmp_path)
+    import json
+
+    meta = json.loads((tmp_path / "run_meta.json").read_text(encoding="utf-8"))
+    assert meta["hf-classifier:org/model-a"]["revision"] == "a" * 40
+    assert meta["hf-classifier:org/model-b"]["revision"] == "b" * 40
+    assert run_eval.meta_key("qwen3guard", argparse.Namespace()) == "qwen3guard"
+
+
 def test_paired_cell_counts_lost_and_gained_on_matched_samples() -> None:
     from zhipi.evaluate import Row
     from zhipi.report import paired_cell
