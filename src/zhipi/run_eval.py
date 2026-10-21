@@ -30,8 +30,18 @@ from .evaluate import Row, evaluate
 from .schemas import Sample
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA = ROOT / "data" / "generated" / "v0.jsonl"
+DEFAULT_DATA = ROOT / "data" / "generated" / "v1.jsonl"
 RAW_DIR = ROOT / "results" / "raw"
+
+
+def raw_dir_for(data_path: Path) -> Path:
+    """Where raw rows for a dataset live. v0 keeps its original location."""
+    return RAW_DIR if data_path.stem == "v0" else RAW_DIR.parent / f"raw_{data_path.stem}"
+
+
+def report_path_for(data_path: Path) -> Path:
+    name = "phase1.md" if data_path.stem == "v0" else f"{data_path.stem}.md"
+    return ROOT / "results" / name
 
 KINDS = (
     "keyword-en",
@@ -73,10 +83,8 @@ def load_dotenv(path: Path = ROOT / ".env") -> list[str]:
 def load_samples(path: Path) -> list[Sample]:
     if not path.exists():
         print(f"{path} not found; building it from the seed files")
-        build.write_jsonl(
-            build.build_samples(build.load_intents(), build.load_hard_negatives()),
-            path,
-        )
+        version = path.stem if path.stem in build.VERSIONS else "v1"
+        build.write_jsonl(build.build_version(version), path)
     return [
         Sample.from_dict(json.loads(line))
         for line in path.read_text(encoding="utf-8").splitlines()
@@ -210,7 +218,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--defense", action="append", required=True, choices=KINDS)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
-    parser.add_argument("--out-dir", type=Path, default=RAW_DIR)
+    parser.add_argument("--out-dir", type=Path, default=None,
+                        help="default: results/raw for v0, results/raw_<name> otherwise")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="smoke test: every k-th sample")
     parser.add_argument("--dry-run", action="store_true")
@@ -219,6 +228,8 @@ def main() -> None:
     parser.add_argument("--qwen-revision", default=None)
     parser.add_argument("--community-revision", default=None)
     args = parser.parse_args()
+    if args.out_dir is None:
+        args.out_dir = raw_dir_for(args.data)
 
     loaded = load_dotenv()
     if loaded:

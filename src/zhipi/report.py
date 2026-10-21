@@ -1,6 +1,7 @@
-"""Turn raw rows into results/phase1.md.
+"""Turn raw rows into a results report.
 
-    python -m zhipi.report                 # reads results/raw, writes results/phase1.md
+    python -m zhipi.report                                  # v1: results/raw_v1 -> results/v1.md
+    python -m zhipi.report --data data/generated/v0.jsonl   # v0: results/raw -> results/phase1.md
 
 Pure reporting: it never calls a model. Everything it prints is a function of the
 raw rows, so the report can be regenerated and diffed.
@@ -14,8 +15,8 @@ from collections import defaultdict
 from pathlib import Path
 
 from .evaluate import Cell, Row, by_carrier, by_condition, summarize
-from .run_eval import DEFAULT_DATA, RAW_DIR, ROOT, load_samples
-from .schemas import Sample
+from .run_eval import DEFAULT_DATA, load_samples, raw_dir_for, report_path_for
+from .schemas import TIERS, Sample
 
 CONDITION_ORDER = (
     "en/plain",
@@ -33,7 +34,17 @@ STRATUM_ORDER = (
     "mentions_config",
     "quotes_secret_shaped",
     "edge_shape",
+    "asks_humans_for_info",
+    "task_list",
+    "format_request",
+    "quoted_text",
+    "long_benign",
 )
+TIER_ORDER = tuple(f"{tier} / {placement}" for placement in ("default", "buried") for tier in TIERS)
+
+
+def _tier_key(sample: Sample) -> str:
+    return f"{sample.tier} / {sample.placement}"
 
 
 def load_raw(raw_dir: Path) -> dict[str, list[dict[str, object]]]:
@@ -116,15 +127,32 @@ def build_report(
     fpr = {d: {c.group: c for c in summarize(rows[d], label="benign", key=lambda s: s.stratum)} for d in defenses}
     car = {d: {c.group: c for c in summarize(rows[d], label="injected", key=by_carrier)} for d in defenses}
 
+    # Tier / placement view: Chinese, untransformed samples only, so the tier or the
+    # placement is the only thing that differs between rows.
+    def _plain_zh(r: Row) -> bool:
+        return r.sample.language == "zh" and not r.sample.transforms
+
+    tier = {
+        d: {c.group: c for c in summarize([r for r in rows[d] if _plain_zh(r)], label="injected", key=_tier_key)}
+        for d in defenses
+    }
+
     det_n: dict[str, int] = defaultdict(int)
     car_n: dict[str, int] = defaultdict(int)
     fpr_n: dict[str, int] = defaultdict(int)
+    tier_n: dict[str, int] = defaultdict(int)
     for s in samples:
         if s.label == "injected":
             det_n[by_condition(s)] += 1
             car_n[s.carrier] += 1
+            if s.language == "zh" and not s.transforms:
+                tier_n[_tier_key(s)] += 1
         else:
             fpr_n[s.stratum] += 1
+    n_intents = len({s.intent_id for s in samples if s.intent_id})
+    n_benign = sum(fpr_n.values())
+    per_condition = sorted(set(det_n.values()))
+    per_condition_text = "–".join(str(n) for n in (per_condition[0], per_condition[-1])) if per_condition else "0"
 
     glance = [
         "| detector | detection, all injected | false positives, all benign |",
@@ -145,8 +173,8 @@ def build_report(
         "",
         "> **Read the caveats at the bottom before quoting any number.** Intervals are "
         "95% Wilson intervals that assume independent samples; these samples are "
-        "template-generated (6 intents × 5 carriers per condition), so the intervals "
-        "are narrower than the true uncertainty.",
+        f"template-generated ({n_intents} intents × 5 carriers per condition), so the "
+        "intervals are narrower than the true uncertainty.",
         "",
         "## At a glance",
         "",
@@ -161,6 +189,15 @@ def build_report(
         "and were excluded from the rate (never counted as detections).",
         "",
         *_table(defenses, CONDITION_ORDER, det, det_n, "language / transform"),
+        "",
+        "## Detection by payload tier and placement (injected, Chinese, untransformed)",
+        "",
+        "Tiers: `explicit` names target and action, `implicit` asks without naming them, "
+        "`spoofed_structure` forges delimiters or tool messages, `judge_targeted` also "
+        "addresses the screening component. `buried` = the payload sits mid-way through a "
+        "long benign document.",
+        "",
+        *_table(defenses, TIER_ORDER, tier, tier_n, "tier / placement"),
         "",
         "## False-positive rate on benign samples (lower is better)",
         "",
@@ -216,8 +253,9 @@ def build_report(
         "- Judge repeats use temperature 0, so zero verdict changes across repeats shows "
         "low residual non-determinism at that setting, not that the verdict is insensitive "
         "to sampling.",
-        "- 30 samples per condition, 6 hand-written intents, one author: indicative, not "
-        "conclusive. Benign set is 16 samples, so false-positive intervals are wide.",
+        f"- {per_condition_text} samples per condition, {n_intents} hand-written intents, "
+        f"one author: indicative, not conclusive. The benign set is {n_benign} samples "
+        "spread over several strata, so false-positive intervals are wide.",
         "- Only detection is measured here. Whether an injection *succeeds* against a "
         "victim agent is Phase 4.",
         "",
@@ -227,10 +265,12 @@ def build_report(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
-    parser.add_argument("--out", type=Path, default=ROOT / "results" / "phase1.md")
+    parser.add_argument("--raw-dir", type=Path, default=None)
+    parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    args.raw_dir = args.raw_dir or raw_dir_for(args.data)
+    args.out = args.out or report_path_for(args.data)
 
     raw = load_raw(args.raw_dir)
     if not raw:

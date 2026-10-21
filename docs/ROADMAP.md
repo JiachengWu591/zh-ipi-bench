@@ -38,6 +38,13 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
 
   **Missing:** Prompt Guard 2 (the Hugging Face access request was rejected) and
   the `ibr` audit (needs `IBR_REPO`; it makes billed calls and was not run).
+- **Phase 2** — **step 1 built, not yet measured.** v1 data (`zhipi.build`): 19
+  intents in four tiers (`explicit` / `implicit` / `spoofed_structure` /
+  `judge_targeted`), a `buried` placement, 53 benign samples in 11 strata; v0 stays
+  frozen (a test pins its fingerprint). **No detector has been run on v1 yet**, so
+  "harder" is a hypothesis. Not started: the planned transforms (`pinyin`,
+  `trad_simp`, `homophone`, `char_decomp`), real-text benign samples, second-annotator
+  agreement, and growing to ~1,500 samples.
 
 ## Compute plan
 

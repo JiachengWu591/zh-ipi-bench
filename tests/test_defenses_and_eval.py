@@ -10,7 +10,7 @@ from zhipi.stats import wilson_interval
 
 
 def _samples():  # type: ignore[no-untyped-def]
-    return build.build_samples(build.load_intents(), build.load_hard_negatives())
+    return build.build_version("v0")
 
 
 def test_wilson_zero_successes_matches_hand_computation() -> None:

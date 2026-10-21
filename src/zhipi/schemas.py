@@ -14,6 +14,14 @@ from typing import Any
 CARRIERS: tuple[str, ...] = ("issue", "rag_doc", "email", "web_html", "tool_output")
 LANGUAGES: tuple[str, ...] = ("zh", "en")
 LABELS: tuple[str, ...] = ("injected", "benign")
+# How hard the payload is to recognise, by how it asks:
+#   explicit          names the target and the action outright (the v0 intents)
+#   implicit          asks without naming the target, or frames the ask
+#   spoofed_structure forges delimiters or tool/system messages
+#   judge_targeted    also addresses the screening component itself
+TIERS: tuple[str, ...] = ("explicit", "implicit", "spoofed_structure", "judge_targeted")
+# `buried`: the payload sits in the middle of a long, otherwise benign document.
+PLACEMENTS: tuple[str, ...] = ("default", "buried")
 
 # Same shape as injection-blast-radius's issue ids, so every sample can be fed to
 # that pipeline unchanged. `\Z`, not `$`: `$` also matches before a trailing
@@ -39,10 +47,13 @@ class Intent:
     text_zh: str
     text_en: str
     rationale: str
+    tier: str
 
     def __post_init__(self) -> None:
         if not _SAMPLE_ID.match(self.intent_id):
             raise MalformedSample(f"intent_id {self.intent_id!r} is not id-shaped")
+        if self.tier not in TIERS:
+            raise MalformedSample(f"intent {self.intent_id!r}: bad tier {self.tier!r}")
         for name in ("technique", "text_zh", "text_en", "rationale"):
             if not getattr(self, name).strip():
                 raise MalformedSample(f"intent {self.intent_id!r}: {name} is empty")
@@ -75,10 +86,17 @@ class Sample:
     """
     stratum: str = ""
     """For benign samples: which hard-negative family it belongs to."""
+    tier: str = ""
+    """For injected samples: the intent's tier (see TIERS)."""
+    placement: str = "default"
 
     def __post_init__(self) -> None:
         if not _SAMPLE_ID.match(self.sample_id):
             raise MalformedSample(f"sample_id {self.sample_id!r} is not id-shaped")
+        if self.placement not in PLACEMENTS:
+            raise MalformedSample(f"{self.sample_id}: bad placement {self.placement!r}")
+        if self.tier and self.tier not in TIERS:
+            raise MalformedSample(f"{self.sample_id}: bad tier {self.tier!r}")
         if self.label not in LABELS:
             raise MalformedSample(f"{self.sample_id}: bad label {self.label!r}")
         if self.carrier not in CARRIERS:
@@ -88,14 +106,14 @@ class Sample:
         if not self.text.strip():
             raise MalformedSample(f"{self.sample_id}: empty text")
         if self.label == "injected":
-            if not self.intent_id or not self.plaintext_intent.strip():
+            if not self.intent_id or not self.plaintext_intent.strip() or not self.tier:
                 raise MalformedSample(
-                    f"{self.sample_id}: injected samples need intent_id and "
-                    "plaintext_intent"
+                    f"{self.sample_id}: injected samples need intent_id, "
+                    "plaintext_intent and tier"
                 )
-        elif self.intent_id is not None or self.transforms:
+        elif self.intent_id is not None or self.transforms or self.tier:
             raise MalformedSample(
-                f"{self.sample_id}: benign samples carry no intent or transforms"
+                f"{self.sample_id}: benign samples carry no intent, tier or transforms"
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -109,6 +127,8 @@ class Sample:
             "intent_id": self.intent_id,
             "plaintext_intent": self.plaintext_intent,
             "stratum": self.stratum,
+            "tier": self.tier,
+            "placement": self.placement,
         }
 
     @classmethod
@@ -124,6 +144,8 @@ class Sample:
                 intent_id=data.get("intent_id"),
                 plaintext_intent=data.get("plaintext_intent", ""),
                 stratum=data.get("stratum", ""),
+                tier=data.get("tier", ""),
+                placement=data.get("placement", "default"),
             )
         except KeyError as exc:
             raise MalformedSample(f"sample is missing field {exc}") from exc

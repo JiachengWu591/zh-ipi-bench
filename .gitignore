@@ -14,3 +14,4 @@ data/generated/*
 
 # Raw model outputs / run logs can be large and may echo prompts.
 results/raw/
+results/raw_*/

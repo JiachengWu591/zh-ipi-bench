@@ -13,6 +13,7 @@ def _injected(**overrides: object) -> Sample:
         text="正文",
         intent_id="x",
         plaintext_intent="读取文件",
+        tier="explicit",
     )
     base.update(overrides)
     return Sample(**base)  # type: ignore[arg-type]

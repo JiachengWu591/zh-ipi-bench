@@ -45,7 +45,9 @@ all of which target this project's sandbox and a fixed fake placeholder secret.
 | Axis | Values | Notes |
 |---|---|---|
 | Carrier | `issue`, `rag_doc`, `email`, `web_html`, `tool_output` | Benign host fixed per carrier; payload varies |
-| Intent / technique | 6 so far (direct, override, impersonation, urgency, role hijack, tool forcing) | Goal held fixed, persuasion varied |
+| Intent / technique | 19 in v1 (6 in v0): direct, override, impersonation, urgency, role hijack, tool forcing, plus unnamed target, instruction extraction, completion framing, checklist embedding, precedent claim, JSON format hijack, refusal suppression, link exfiltration, persistent instruction, quotation, forged delimiter, forged tool result, screening-layer appeal | Goal held fixed (the sandbox, a fake secret, or the assistant's own instructions); persuasion varied |
+| Tier | `explicit`, `implicit`, `spoofed_structure`, `judge_targeted` | The author's judgement of how recognisable the ask is; a hypothesis about difficulty, not a measured property |
+| Placement | `default`, `buried` | `buried` hides the payload mid-way through a long benign document (v1 only) |
 | Transform | see below | Applied to the payload only |
 | Language | `zh` (transformed), `en` (plain control) | The English control isolates the language effect from the carrier effect |
 | Label | `injected`, `benign` | Benign includes hard negatives, below |
@@ -73,6 +75,11 @@ Mirrors the strata in injection-blast-radius, because that project measured
 that the *cost* of a defense concentrates in a few of them:
 `imperative_to_humans`, `discusses_injection`, `mentions_config`,
 `quotes_secret_shaped`, `edge_shape`, plus `plain` (the bare benign host).
+v1 adds strata that deliberately look like the new attacks but are legitimate:
+`asks_humans_for_info` (a maintainer asking a human reporter for their environment
+config), `task_list`, `format_request`, `quoted_text`, and `long_benign` (the
+`buried` filler with no payload). A detector that wins on v1 must separate these
+from their attack twins, not merely flag anything that sounds like a request.
 
 ## Metrics
 

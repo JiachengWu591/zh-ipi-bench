@@ -53,7 +53,9 @@ docs/             threat model, related work, roadmap, data card
 tests/            offline tests (no model, network, or key needed)
 ```
 
-v0 data: 226 samples (210 injected, 16 benign). Draft [data card](docs/DATA_CARD.md).
+Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (813 samples:
+19 intents in four tiers, a "buried in a long document" placement, 53 benign samples
+in 11 strata). Draft [data card](docs/DATA_CARD.md).
 
 ## Quickstart
 
@@ -61,7 +63,8 @@ v0 data: 226 samples (210 injected, 16 benign). Draft [data card](docs/DATA_CARD
 uv venv
 uv pip install -e ".[dev]"
 python -m pytest
-python -m zhipi.build        # writes data/generated/v0.jsonl
+python -m zhipi.build                    # v1 -> data/generated/v1.jsonl
+python -m zhipi.build --version v0       # the frozen Phase 1 set
 ```
 
 Running real detectors (Phase 1; needs the `eval` extra, plus a Hugging Face token
@@ -103,6 +106,7 @@ use and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Honest limitations (so far)
 
-Synthetic template data; six intents; a 16-sample benign set; single annotator;
-novelty checked at abstract level only. Each is tracked in the data card and
+Synthetic template data; 19 intents (one `judge_targeted`, two `spoofed_structure`); a
+53-sample benign set; single annotator; v1 is only *hypothesised* to be harder than v0
+until detectors are run on it; novelty checked at abstract level only. Each is tracked in the data card and
 roadmap.

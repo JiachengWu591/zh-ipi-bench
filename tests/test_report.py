@@ -9,7 +9,7 @@ from zhipi.evaluate import evaluate
 
 
 def _samples():  # type: ignore[no-untyped-def]
-    return build.build_samples(build.load_intents(), build.load_hard_negatives())
+    return build.build_version("v0")
 
 
 def test_report_end_to_end(tmp_path) -> None:  # type: ignore[no-untyped-def]
@@ -26,6 +26,27 @@ def test_report_end_to_end(tmp_path) -> None:  # type: ignore[no-untyped-def]
     assert "discusses_injection" in text
     assert "wrong-tool control" in text  # the caveats are part of the report
     assert "n/a" not in text.split("## False-positive")[0]  # nothing failed here
+
+
+def test_v1_report_has_tier_and_new_strata(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    samples = build.build_version("v1")
+    run_eval.write_rows(EN_KEYWORDS.name, evaluate(EN_KEYWORDS, samples), tmp_path, append=False)
+    text = report.build_report(report.load_raw(tmp_path), samples, {}, tmp_path / "v1.jsonl")
+    assert "## Detection by payload tier and placement" in text
+    for row in ("explicit / default", "judge_targeted / buried"):
+        assert row in text
+    for stratum in ("asks_humans_for_info", "long_benign"):
+        assert stratum in text
+    assert "19 hand-written intents" in text
+
+
+def test_raw_and_report_paths_keep_v0_where_it_was() -> None:
+    from pathlib import Path
+
+    assert run_eval.raw_dir_for(Path("x/v0.jsonl")) == run_eval.RAW_DIR
+    assert run_eval.raw_dir_for(Path("x/v1.jsonl")).name == "raw_v1"
+    assert run_eval.report_path_for(Path("x/v0.jsonl")).name == "phase1.md"
+    assert run_eval.report_path_for(Path("x/v1.jsonl")).name == "v1.md"
 
 
 def test_report_marks_incomplete_cells(tmp_path) -> None:  # type: ignore[no-untyped-def]
