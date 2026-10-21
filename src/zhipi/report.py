@@ -17,6 +17,7 @@ from pathlib import Path
 from .evaluate import Cell, Row, by_carrier, by_condition, summarize
 from .run_eval import DEFAULT_DATA, load_samples, raw_dir_for, report_path_for
 from .schemas import TIERS, Sample
+from .stats import auroc, auroc_bootstrap_ci, mcnemar_exact
 
 CONDITION_ORDER = (
     "en/plain",
@@ -26,7 +27,43 @@ CONDITION_ORDER = (
     "zh/space_split",
     "zh/code_mix",
     "zh/code_mix+zero_width",
+    "zh/plain (buried)",
 )
+# (baseline condition, variant condition, what the comparison isolates)
+PAIRED_COMPARISONS: tuple[tuple[str, str, str], ...] = (
+    ("en/plain", "zh/plain", "language: Chinese vs the English control"),
+    ("zh/plain", "zh/fullwidth", "transform: fullwidth"),
+    ("zh/plain", "zh/zero_width", "transform: zero-width"),
+    ("zh/plain", "zh/space_split", "transform: space-split"),
+    ("zh/plain", "zh/code_mix", "transform: code-mix"),
+    ("zh/plain", "zh/code_mix+zero_width", "transform: code-mix + zero-width"),
+    ("zh/plain", "zh/plain (buried)", "placement: buried in a long document"),
+)
+
+
+def paired_cell(rows: list[Row], base: str, variant: str) -> str:
+    """`lost↓/gained↑ of n, p=…` for samples matched on (intent, carrier).
+
+    Only injected samples where both versions produced a completed verdict count.
+    `lost`: the baseline detected it and the variant missed it; `gained`: the reverse.
+    """
+
+    def index(cond: str) -> dict[tuple[str | None, str], Row]:
+        return {
+            (r.sample.intent_id, r.sample.carrier): r
+            for r in rows
+            if r.sample.label == "injected" and r.completed and by_condition(r.sample) == cond
+        }
+
+    base_idx, var_idx = index(base), index(variant)
+    keys = base_idx.keys() & var_idx.keys()
+    if not keys:
+        return "n/a"
+    lost = sum(1 for k in keys if base_idx[k].flagged and not var_idx[k].flagged)
+    gained = sum(1 for k in keys if not base_idx[k].flagged and var_idx[k].flagged)
+    if lost == 0 and gained == 0:
+        return f"no change (n={len(keys)})"
+    return f"{lost}↓/{gained}↑ of {len(keys)}, p={mcnemar_exact(lost, gained):.2f}"
 STRATUM_ORDER = (
     "plain",
     "imperative_to_humans",
@@ -113,6 +150,51 @@ def stability(raw: list[dict[str, object]]) -> tuple[int, int] | None:
     return sum(1 for v in full if len(set(v.values())) > 1), len(full)
 
 
+def auroc_section(defenses: list[str], rows: dict[str, list[Row]]) -> list[str]:
+    """Threshold-free AUROC per condition, for detectors that emit a score.
+
+    Positives: completed injected samples of the condition. Negatives: every completed
+    benign sample in the same language. A difference here is a change in how well the
+    detector *ranks* injections above benign text; a difference only in the rate tables
+    can come from calibration alone (the same ranking cut at a different point).
+    """
+    scored: dict[str, list[Row]] = {}
+    for d in defenses:
+        done = [r for r in rows[d] if r.completed]
+        if done and all(r.score is not None for r in done):
+            scored[d] = done
+    if not scored:
+        return []
+    names = list(scored)
+    lines = [
+        "## Threshold-free view: AUROC",
+        "",
+        "For detectors that output a score. 0.5 = no better than chance, 1.0 = perfect "
+        "ranking. Negatives are all benign samples in the same language. Intervals are "
+        "bootstrap percentile intervals over samples (fixed seed); they ignore that "
+        "samples from one intent are correlated, so they are too narrow.",
+        "",
+        "| language / transform | " + " | ".join(names) + " |",
+        "|---|" + "|".join("---" for _ in names) + "|",
+    ]
+    for cond in CONDITION_ORDER:
+        cells, any_cell = [], False
+        for d in names:
+            pos = [r.score for r in scored[d] if r.sample.label == "injected" and by_condition(r.sample) == cond]
+            lang = cond.split("/")[0]
+            neg = [r.score for r in scored[d] if r.sample.label == "benign" and r.sample.language == lang]
+            if pos and neg:
+                any_cell = True
+                value = auroc(pos, neg)  # type: ignore[arg-type]
+                low, high = auroc_bootstrap_ci(pos, neg)  # type: ignore[arg-type]
+                cells.append(f"{value:.2f} [{low:.2f}–{high:.2f}]")
+            else:
+                cells.append("n/a")
+        if any_cell:
+            lines.append(f"| {cond} | " + " | ".join(cells) + " |")
+    return [*lines, ""]
+
+
 def build_report(
     raw_by_defense: dict[str, list[dict[str, object]]],
     samples: list[Sample],
@@ -191,6 +273,29 @@ def build_report(
         "",
         *_table(defenses, CONDITION_ORDER, det, det_n, "language / transform"),
         "",
+        "## Paired comparisons: does a Chinese-specific change hurt detection?",
+        "",
+        "Each pair is the same intent in the same carrier, with and without the change. "
+        "`a↓/b↑` = the baseline detected it and the variant missed it (`a`), or the "
+        "reverse (`b`). `p` is an exact two-sided McNemar test; pairs that agree carry no "
+        "information. Not corrected for the many comparisons made here. The pairs are "
+        "template-generated and the 5 carriers of one intent are replicates of the same "
+        "payload, so the effective number of independent pairs is closer to the number of "
+        "intents than to the pair count; treat a small `p` as a lead, not a finding, and "
+        "check the AUROC table below before reading a rate difference as lost "
+        "discrimination.",
+        "",
+        "| comparison | " + " | ".join(defenses) + " |",
+        "|---|" + "|".join("---" for _ in defenses) + "|",
+        *[
+            f"| {label} | "
+            + " | ".join(paired_cell(rows[d], base, variant) for d in defenses)
+            + " |"
+            for base, variant, label in PAIRED_COMPARISONS
+            if any(s.language and by_condition(s) == variant for s in samples)
+        ],
+        "",
+        *auroc_section(defenses, rows),
         "## Detection by payload tier and placement (injected, Chinese, untransformed)",
         "",
         "Tiers: `explicit` names target and action, `implicit` asks without naming them, "

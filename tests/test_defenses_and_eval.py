@@ -19,6 +19,32 @@ def test_wilson_zero_successes_matches_hand_computation() -> None:
     assert high == pytest.approx(0.2775, abs=1e-3)
 
 
+def test_mcnemar_matches_hand_computation() -> None:
+    from zhipi.stats import mcnemar_exact
+
+    assert mcnemar_exact(0, 0) == 1.0
+    assert mcnemar_exact(5, 5) == 1.0  # perfectly balanced: no evidence of an effect
+    # 0 lost vs 8 gained: 2 * (1/2^8) = 2/256
+    assert mcnemar_exact(0, 8) == pytest.approx(2 / 256)
+    assert mcnemar_exact(8, 0) == pytest.approx(2 / 256)  # symmetric
+    assert mcnemar_exact(1, 9) == pytest.approx(2 * (1 + 10) / 1024)
+
+
+def test_auroc_basic_cases_and_bootstrap_is_reproducible() -> None:
+    from zhipi.stats import auroc, auroc_bootstrap_ci
+
+    assert auroc([0.9, 0.8], [0.1, 0.2]) == 1.0
+    assert auroc([0.1, 0.2], [0.9, 0.8]) == 0.0
+    assert auroc([0.5], [0.5]) == 0.5  # ties count half
+    assert auroc([0.9, 0.2], [0.5]) == 0.5
+    pos, neg = [0.9, 0.8, 0.7, 0.3], [0.6, 0.2, 0.1, 0.4]
+    assert auroc_bootstrap_ci(pos, neg) == auroc_bootstrap_ci(pos, neg)  # fixed seed
+    low, high = auroc_bootstrap_ci(pos, neg)
+    assert 0.0 <= low <= auroc(pos, neg) <= high <= 1.0
+    with pytest.raises(ValueError):
+        auroc([], [0.1])
+
+
 def test_wilson_rejects_bad_input() -> None:
     with pytest.raises(ValueError):
         wilson_interval(1, 0)

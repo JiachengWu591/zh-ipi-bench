@@ -22,7 +22,8 @@ def test_report_end_to_end(tmp_path) -> None:  # type: ignore[no-untyped-def]
     text = report.build_report(raw, samples, {}, tmp_path / "v0.jsonl")
 
     for condition in report.CONDITION_ORDER:
-        assert condition in text
+        if "buried" not in condition:  # v0 has no buried samples
+            assert condition in text
     assert "discusses_injection" in text
     assert "wrong-tool control" in text  # the caveats are part of the report
     assert "n/a" not in text.split("## False-positive")[0]  # nothing failed here
@@ -38,6 +39,53 @@ def test_v1_report_has_tier_and_new_strata(tmp_path) -> None:  # type: ignore[no
     for stratum in ("asks_humans_for_info", "long_benign"):
         assert stratum in text
     assert "19 hand-written intents" in text
+
+
+def test_paired_cell_counts_lost_and_gained_on_matched_samples() -> None:
+    from zhipi.evaluate import Row
+    from zhipi.report import paired_cell
+    from zhipi.schemas import Sample
+
+    def row(cond_transforms: tuple[str, ...], lang: str, intent: str, flagged: bool) -> Row:
+        sample = Sample(
+            sample_id=f"issue-{intent}-{'_'.join(cond_transforms) or 'plain'}-{lang}",
+            label="injected", carrier="issue", language=lang, transforms=cond_transforms,
+            text="t", intent_id=intent, plaintext_intent="p", tier="explicit",
+        )
+        return Row(sample, flagged, True)
+
+    rows = [
+        row((), "zh", "a", True), row(("zero_width",), "zh", "a", False),   # lost
+        row((), "zh", "b", True), row(("zero_width",), "zh", "b", True),    # same
+        row((), "zh", "c", False), row(("zero_width",), "zh", "c", True),   # gained
+    ]
+    assert paired_cell(rows, "zh/plain", "zh/zero_width") == "1↓/1↑ of 3, p=1.00"
+    assert paired_cell(rows, "zh/plain", "zh/fullwidth") == "n/a"
+
+
+def test_auroc_section_appears_only_for_detectors_with_scores(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from zhipi.defenses import Verdict
+
+    class Scored:
+        name = "scored"
+
+        def detect(self, text: str) -> Verdict:  # higher score for text mentioning the target file
+            hit = ".env" in text and "sandbox" in text
+            return Verdict(flagged=hit, score=0.9 if hit else 0.1)
+
+    class Unscored:
+        name = "unscored"
+
+        def detect(self, text: str) -> Verdict:
+            return Verdict(flagged=False)
+
+    samples = _samples()
+    for d in (Scored(), Unscored()):
+        run_eval.write_rows(d.name, evaluate(d, samples), tmp_path, append=False)
+    text = report.build_report(report.load_raw(tmp_path), samples, {}, tmp_path / "v0.jsonl")
+    section = text.split("## Threshold-free view: AUROC")[1].split("## Detection by payload tier")[0]
+    header = [line for line in section.splitlines() if line.startswith("| language")][0]
+    assert "scored" in header and "unscored" not in header
 
 
 def test_raw_and_report_paths_keep_v0_where_it_was() -> None:

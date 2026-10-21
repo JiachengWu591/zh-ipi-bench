@@ -61,7 +61,21 @@ about *Chinese-specific obfuscation*, and a null result is a legitimate outcome.
   evaluation, not a regression from a claimed capability. The repo is gated (Llama 4
   Community License plus an access form), the context window is 512 tokens, and the
   card advises splitting longer inputs into segments (`adapters/prompt_guard.py` does
-  this and takes the max).
+  this and takes the max). *Update:* the Hugging Face access request was rejected,
+  so it has not been run; the Horizon-Labs model below took its place.
+- **Horizon-Labs/prompt-injection-guard-base** (Apache-2.0, ungated, 308M, mmBERT
+  backbone; card read 2026-10-21). States synthetic training data in 30 languages
+  (Chinese listed) and documents with planted injections in 45 types, built from
+  permissively licensed sources only. Its numbers (for example 94.4% on NotInject,
+  F1 0.99 on its own held-out synthetic sets) are computed by the authors and have
+  **not** been independently verified here; held-out synthetic data from the same
+  generator is the easiest setting for any detector. The card lists its own weak
+  spot: bare out-of-place tasks in documents are often missed. Evaluated here via
+  the generic `hf-classifier` kind with the 2048-token window the card recommends.
+  Other ungated candidates seen but not run: `patronus-studio/wolf-defender-*`
+  (multilingual, Chinese not confirmed), `protectai/deberta-v3-base-prompt-injection-v2`
+  (English only; a natural English-centric control), `NeuralTrust/prompt-guard-oss-small`
+  (nine languages, Chinese not seen in the list).
 - **Qwen3Guard** ([arXiv 2510.14276](https://arxiv.org/abs/2510.14276); Gen-0.6B
   etc. on Hugging Face, Apache-2.0). Evaluated on Chinese and supports 119
   languages, but its documented scope is harmful-content moderation, **not**

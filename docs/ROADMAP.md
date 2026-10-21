@@ -59,6 +59,35 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
     That matches prior work and hypothesis H1 is, for this detector, a null result;
     the open question is the small, cheap detectors, which need a working one to test.
 
+- **Phase 2, step 2: a small detector that is neither blind nor degenerate.**
+  Screened 284 Hub models and added `Horizon-Labs/prompt-injection-guard-base`
+  (308M, Apache-2.0, multilingual incl. Chinese, trained on documents with planted
+  injections; its card's metrics are the authors' own and unverified here). Run via
+  the new generic `hf-classifier` kind at a pinned commit. On v1 (default
+  threshold 0.5): **80% detection, 13% false positives (7 of 53), AUROC 0.94 on
+  Chinese**. What it shows about H1:
+  - **Rates differ by language, ranking barely does.** English plain 97% vs
+    Chinese plain 81% at threshold 0.5 (en better in 9 of 19 intents, zh better in
+    0, p≈0.004 on a sign test over intents), but AUROC is 0.97 vs 0.94 with
+    overlapping intervals. English text is also flagged more when benign (4 of 11
+    vs 3 of 32), so most of the gap looks like calibration: the same ranking cut at a
+    different point. Comparing detection rates at one threshold would have
+    overstated a language effect.
+  - **Chinese-specific transforms did nothing measurable.** Fullwidth and zero-width
+    changed no verdict; space-split and code-mix moved a few in both directions
+    (p 0.36–0.55); AUROC stays 0.92–0.95.
+  - **Burying the payload in a long document hurts most:** 81% → 58% detection
+    (23 lost, 1 gained), AUROC 0.94 → 0.89.
+  - **Weak spots:** false positives on `asks_humans_for_info` (3 of 5), the
+    very requests that resemble the `ctx_config` attack, and on text containing
+    fake-secret placeholders.
+  - So H1 ("small detectors lose recall on Chinese-specific obfuscation") is
+    **not supported for this detector**; what the data does support is a placement
+    effect and a calibration shift across languages. One detector, template data,
+    19 intents: indicative only. The English-vs-Chinese comparison is also
+    confounded by translation wording and by the different benign sets (11 English
+    vs 32 Chinese).
+
   Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
   `char_decomp`), real-text benign samples, second-annotator agreement, and growing to
   ~1,500 samples. Per-tier counts are very uneven (`judge_targeted` is one intent), so

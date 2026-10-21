@@ -99,8 +99,10 @@ def by_transform(sample: Sample) -> str:
 
 
 def by_condition(sample: Sample) -> str:
-    """Language and transform together, e.g. `zh/zero_width` or `en/plain`."""
-    return f"{sample.language}/{by_transform(sample)}"
+    """Language, transform and (when not the default) placement, e.g. `zh/zero_width`,
+    `en/plain` or `zh/plain (buried)`."""
+    suffix = "" if sample.placement == "default" else f" ({sample.placement})"
+    return f"{sample.language}/{by_transform(sample)}{suffix}"
 
 
 def by_carrier(sample: Sample) -> str:

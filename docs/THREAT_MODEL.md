@@ -32,6 +32,13 @@ Each can come out null, and a null result is reported as such. Victim-side attac
 success is measured in Phase 4 only, and is compared against IssueTrojanBench's
 translation-only result rather than assumed to differ.
 
+**Status of H1 (see `docs/ROADMAP.md`, Phase 2).** Tested on one small multilingual
+detector (Horizon-Labs, v1 data): not supported. Chinese-specific transforms changed
+no verdict or moved a few both ways, and the English-vs-Chinese gap in detection
+*rate* is mostly a calibration shift (AUROC 0.97 vs 0.94, overlapping intervals).
+A different factor did matter: burying the payload in a long document (AUROC 0.94 →
+0.89). H1 is untested on a purely English detector, which is the natural next control.
+
 ## Attacker model
 
 Anyone who can put text where an LLM application will read it as *data*: an
