@@ -37,7 +37,11 @@ detector (Horizon-Labs, v1 data): not supported. Chinese-specific transforms cha
 no verdict or moved a few both ways, and the English-vs-Chinese gap in detection
 *rate* is mostly a calibration shift (AUROC 0.97 vs 0.94, overlapping intervals).
 A different factor did matter: burying the payload in a long document (AUROC 0.94 →
-0.89). H1 is untested on a purely English detector, which is the natural next control.
+0.89). An English-only detector (protectai) did not give a clean control: it is weak
+on indirect injection even in English (AUROC 0.68) and flags most Chinese text
+(55% false positives overall), so its detection rate *rises* on Chinese while its
+AUROC falls (0.57). A fair test of "English-centric detectors degrade on Chinese"
+needs an English detector that works on this task first.
 
 ## Attacker model
 

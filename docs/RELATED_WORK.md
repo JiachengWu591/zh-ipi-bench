@@ -72,9 +72,13 @@ about *Chinese-specific obfuscation*, and a null result is a legitimate outcome.
   generator is the easiest setting for any detector. The card lists its own weak
   spot: bare out-of-place tasks in documents are often missed. Evaluated here via
   the generic `hf-classifier` kind with the 2048-token window the card recommends.
-  Other ungated candidates seen but not run: `patronus-studio/wolf-defender-*`
-  (multilingual, Chinese not confirmed), `protectai/deberta-v3-base-prompt-injection-v2`
-  (English only; a natural English-centric control), `NeuralTrust/prompt-guard-oss-small`
+- **protectai/deberta-v3-base-prompt-injection-v2** (Apache-2.0, 704 MB, DeBERTa-v3
+  base; card: "highly accurate in identifying prompt injections in English", English
+  only). Run as an English-centric control. On v1 it over-flags (55% false positives,
+  worst on Chinese text) and ranks injections poorly (AUROC 0.68 English, 0.57
+  Chinese), so it is a weak control for *indirect* injection; see `docs/ROADMAP.md`.
+- Other ungated candidates seen but not run: `patronus-studio/wolf-defender-*`
+  (multilingual, Chinese not confirmed), `NeuralTrust/prompt-guard-oss-small`
   (nine languages, Chinese not seen in the list).
 - **Qwen3Guard** ([arXiv 2510.14276](https://arxiv.org/abs/2510.14276); Gen-0.6B
   etc. on Hugging Face, Apache-2.0). Evaluated on Chinese and supports 119

@@ -87,6 +87,22 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
     19 intents: indicative only. The English-vs-Chinese comparison is also
     confounded by translation wording and by the different benign sets (11 English
     vs 32 Chinese).
+- **Phase 2, step 3: an English-centric control.** Added
+  `protectai/deberta-v3-base-prompt-injection-v2` (English only per its card, ~689,000
+  downloads) at a pinned commit. It is **not a clean H1 control**, because it is weak
+  on this task even in English: 84% detection but **55% false positives**, AUROC
+  **0.68 in English and 0.57 in Chinese** (intervals overlap, so the drop is not
+  established). It is built for direct injections, while v1 hides the instruction in
+  documents. Its detection *rate* is a trap: 32% on English payloads but 87% on
+  Chinese ones, because it flags nearly all Chinese text (100% of the benign
+  `discusses_injection` and `asks_humans_for_info` samples), so the rate rises as
+  discrimination falls. AUROC shows what the rates hide, which is why the report puts
+  false positives and AUROC next to detection. A fair English control needs a
+  detector trained for indirect injection in English; none was run.
+- **Provenance fix.** `run_meta.json` keyed every `hf-classifier` run by kind, so the
+  second model overwrote the first one's pinned revision. Now keyed by model id and
+  covered by a test; both Hub models were re-run at a clean commit with identical
+  counts, as expected of deterministic models.
 
   Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
   `char_decomp`), real-text benign samples, second-annotator agreement, and growing to
