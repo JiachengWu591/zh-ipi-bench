@@ -53,7 +53,7 @@ docs/             threat model, related work, roadmap, data card
 tests/            offline tests (no model, network, or key needed)
 ```
 
-Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (813 samples:
+Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (803 samples:
 19 intents in four tiers, a "buried in a long document" placement, 53 benign samples
 in 11 strata). Draft [data card](docs/DATA_CARD.md).
 

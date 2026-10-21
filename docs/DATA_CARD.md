@@ -6,9 +6,9 @@ Two builds from the same seed files. Both are generated locally by
 | | v0 | v1 |
 |---|---|---|
 | Purpose | What Phase 1 was measured on; frozen | Harder successor, built after v0 proved saturated for a strong LLM judge |
-| Size | 226 samples: 210 injected, 16 benign | 813 samples: 760 injected, 53 benign |
+| Size | 226 samples: 210 injected, 16 benign | 803 samples: 750 injected, 53 benign |
 | Intents | 6 (all `explicit`) | 19: 6 `explicit`, 10 `implicit`, 2 `spoofed_structure`, 1 `judge_targeted` |
-| Injected | 180 zh (6 transform sets) + 30 en control | 665 default placement (zh × 6 transform sets + en control) + 95 `buried` |
+| Injected | 180 zh (6 transform sets) + 30 en control | 655 default placement (zh × up to 6 transform sets + en control) + 95 `buried`. A transform that leaves a payload unchanged is skipped (fullwidth does nothing to a payload with no ASCII), so no two samples have identical text |
 | Benign | 10 bare hosts + 6 hard negatives | 10 bare hosts + 10 long (buried-style) hosts + 33 hard negatives |
 | Languages | Simplified Chinese; English parallel control | same |
 | Construction | Template-based, hand-written seeds | same |

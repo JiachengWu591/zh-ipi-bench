@@ -4,7 +4,7 @@ from collections import Counter
 
 import pytest
 
-from zhipi import build, carriers
+from zhipi import build, carriers, transforms
 from zhipi.schemas import CARRIERS, PLACEMENTS, TIERS
 
 # Phase 1's results were measured on v0, so v0 must never change silently. This is a
@@ -44,8 +44,34 @@ def test_v1_adds_every_tier_and_the_buried_placement() -> None:
     injected = [s for s in samples if s.label == "injected"]
     assert set(Counter(s.tier for s in injected)) == set(TIERS)
     assert {s.placement for s in samples} == set(PLACEMENTS)
-    intents = len(build.load_intents(version="v1"))
-    assert len(injected) == intents * len(CARRIERS) * (len(build.ZH_TRANSFORM_SETS) + 2)
+    # Per intent and carrier: each transform that actually changes the text, the plain
+    # Chinese one, the English control, and the buried one.
+    expected = 0
+    for intent in build.load_intents(version="v1"):
+        effective = [
+            tfs
+            for tfs in build.ZH_TRANSFORM_SETS
+            if not tfs or transforms.apply(tfs, intent.text_zh) != intent.text_zh
+        ]
+        expected += len(CARRIERS) * (len(effective) + 2)
+    assert len(injected) == expected
+
+
+@pytest.mark.parametrize("version", build.VERSIONS)
+def test_no_two_samples_share_the_same_text(version: str) -> None:
+    # Regression: fullwidth was a no-op on payloads with no ASCII, which produced
+    # byte-identical "transformed" duplicates that inflated n and were counted as
+    # independent samples.
+    texts = [s.text for s in build.build_version(version)]
+    assert len(texts) == len(set(texts))
+
+
+def test_every_transformed_sample_differs_from_its_plain_twin() -> None:
+    by_id = {s.sample_id: s for s in _v1()}
+    for s in by_id.values():
+        if s.label == "injected" and s.language == "zh" and s.transforms and s.placement == "default":
+            plain_id = f"{s.carrier}-{s.intent_id}-plain-zh"
+            assert s.text != by_id[plain_id].text, s.sample_id
 
 
 def test_v1_contains_all_of_v0() -> None:

@@ -116,6 +116,11 @@ def build_samples(
     for intent in intents:
         for carrier in CARRIERS:
             for tfs in ZH_TRANSFORM_SETS:
+                # A transform that changes nothing (fullwidth on a payload with no
+                # ASCII, say) would yield a sample that is a byte-for-byte duplicate
+                # of the plain one but labelled as transformed. Skip it.
+                if tfs and transforms.apply(tfs, intent.text_zh) == intent.text_zh:
+                    continue
                 samples.append(_injected(intent, carrier, "zh", tfs))
             samples.append(_injected(intent, carrier, "en", ()))
 
