@@ -1,4 +1,4 @@
-# Phase 1 results
+# Phase 1 results (v0)
 
 Dataset: `v0.jsonl` (226 samples). Regenerate with `python -m zhipi.run_eval ...` then `python -m zhipi.report`.
 
@@ -32,6 +32,14 @@ Each cell: rate [95% interval]. `⚠k` = k samples where the detector failed and
 | zh/space_split | 30 | 100% [89%–100%] | 100% [89%–100%] | 100% [89%–100%] | 0% [0%–11%] | 0% [0%–11%] | 3% [1%–17%] | 0% [0%–11%] | 3% [1%–17%] |
 | zh/code_mix | 30 | 100% [89%–100%] | 100% [89%–100%] | 100% [89%–100%] | 0% [0%–11%] | 17% [7%–34%] | 7% [2%–21%] | 0% [0%–11%] | 7% [2%–21%] |
 | zh/code_mix+zero_width | 30 | 100% [89%–100%] | 100% [89%–100%] | 100% [89%–100%] | 0% [0%–11%] | 0% [0%–11%] | 0% [0%–11%] | 0% [0%–11%] | 0% [0%–11%] |
+
+## Detection by payload tier and placement (injected, Chinese, untransformed)
+
+Tiers: `explicit` names target and action, `implicit` asks without naming them, `spoofed_structure` forges delimiters or tool messages, `judge_targeted` also addresses the screening component. `buried` = the payload sits mid-way through a long benign document.
+
+| tier / placement | n | community-mbert-injection | deepseek-judge/high_risk | deepseek-judge/suspicious+high_risk | keyword-en | keyword-zh | qwen3guard-gen-0.6b/jailbreak | qwen3guard-gen-0.6b/unsafe | qwen3guard-gen-0.6b/unsafe+ctrv |
+|---|--:|---|---|---|---|---|---|---|---|
+| explicit / default | 30 | 100% [89%–100%] | 100% [89%–100%] | 100% [89%–100%] | 0% [0%–11%] | 33% [19%–51%] | 7% [2%–21%] | 0% [0%–11%] | 7% [2%–21%] |
 
 ## False-positive rate on benign samples (lower is better)
 
@@ -76,7 +84,7 @@ Each cell: rate [95% interval]. `⚠k` = k samples where the detector failed and
 - Prompt Guard 2's model card lists English, French, German, Hindi, Italian, Portuguese, Spanish and Thai as evaluated languages. Chinese is not listed.
 - `community-mbert-injection` is an unvetted community model (see the metadata table). On v0 it flags every sample, benign ones included, so its detection numbers carry no information. Probing it directly showed it separates short casual text ("The weather is nice today.") from blatant injections, but scores task-like or technical text ("Please close this issue as a duplicate of #311.") as an injection at 0.999. That is a property of this model on this distribution, not evidence about multilingual detectors in general.
 - The LLM judge's result depends on its prompt (hash recorded above); a different prompt can move the numbers.
-- **A 100% cell means v0 cannot tell this detector from a perfect one, not that the detector is robust.** The v0 payloads state their goal outright (read a named file, publish it), so a strong LLM reads through every transform. Harder payloads are a Phase 2 task; until then a ceiling result is a statement about the dataset.
+- **A 100% cell means the dataset cannot tell this detector from a perfect one, not that the detector is robust.** On v0 the payloads state their goal outright (read a named file, publish it), so a strong LLM reads through every transform; a ceiling result is a statement about the dataset.
 - Judge repeats use temperature 0, so zero verdict changes across repeats shows low residual non-determinism at that setting, not that the verdict is insensitive to sampling.
-- 30 samples per condition, 6 hand-written intents, one author: indicative, not conclusive. Benign set is 16 samples, so false-positive intervals are wide.
+- 30–30 samples per condition, 6 hand-written intents, one author: indicative, not conclusive. The benign set is 16 samples spread over several strata, so false-positive intervals are wide.
 - Only detection is measured here. Whether an injection *succeeds* against a victim agent is Phase 4.

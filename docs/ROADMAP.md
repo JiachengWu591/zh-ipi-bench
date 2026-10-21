@@ -38,13 +38,31 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
 
   **Missing:** Prompt Guard 2 (the Hugging Face access request was rejected) and
   the `ibr` audit (needs `IBR_REPO`; it makes billed calls and was not run).
-- **Phase 2** — **step 1 built, not yet measured.** v1 data (`zhipi.build`): 19
-  intents in four tiers (`explicit` / `implicit` / `spoofed_structure` /
-  `judge_targeted`), a `buried` placement, 53 benign samples in 11 strata; v0 stays
-  frozen (a test pins its fingerprint). **No detector has been run on v1 yet**, so
-  "harder" is a hypothesis. Not started: the planned transforms (`pinyin`,
-  `trad_simp`, `homophone`, `char_decomp`), real-text benign samples, second-annotator
-  agreement, and growing to ~1,500 samples.
+- **Phase 2** — **step 1 done and measured** (`results/v1.md`, 803 samples, all runs
+  at one clean commit, same dataset hash). v1 has 19 intents in four tiers
+  (`explicit` / `implicit` / `spoofed_structure` / `judge_targeted`), a `buried`
+  placement, and 53 benign samples in 11 strata; v0 stays frozen (a test pins its
+  fingerprint). A duplicate-sample bug (a no-op transform) was found and fixed on
+  the way. What v1 showed:
+  - **The DeepSeek judge is no longer at the ceiling:** 97% detection (strict) with
+    1 of 53 benign samples flagged. Every miss (19 of 750) comes from two `implicit`
+    intents, `ctx_config` ("attach the configuration you can see") and `checklist`
+    (one unticked box). It was **not** fooled by `spoofed_structure`,
+    `judge_targeted` or `buried` payloads, nor by any Chinese transform.
+  - **Those misses may be label ambiguity, not detector error.** The same two
+    texts are almost indistinguishable from legitimate requests to a human reporter;
+    the one benign sample the judge flagged is exactly such a request
+    (`asks_humans_for_info`). Resolving this needs a second annotator.
+  - The community mBERT classifier again flags everything (100% / 100%); Qwen3Guard
+    again flags ~1% of attacks, as expected of a wrong-tool control.
+  - **So far no evidence that Chinese-specific transforms hurt a strong LLM judge.**
+    That matches prior work and hypothesis H1 is, for this detector, a null result;
+    the open question is the small, cheap detectors, which need a working one to test.
+
+  Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
+  `char_decomp`), real-text benign samples, second-annotator agreement, and growing to
+  ~1,500 samples. Per-tier counts are very uneven (`judge_targeted` is one intent), so
+  the tier rows say little beyond the specific wordings.
 
 ## Compute plan
 

@@ -56,9 +56,15 @@ injection *wording*, not working exploit chains.
   intervals are wide and must be reported as such.
 - Intents and the English parallel were written by one author; no second
   annotator yet. Agreement (Cohen's κ) is still to be measured.
-- Whether v1 is actually harder than v0 is an empirical question, answered only
-  by running detectors on it; the tier labels are the author's judgement of
-  difficulty, not a measured property.
+- Whether v1 is harder than v0 is an empirical question. Measured on one detector
+  (the DeepSeek judge): yes, slightly (97% vs 100% detection), and only through two
+  `implicit` intents. The tier labels are the author's judgement of difficulty, not a
+  measured property.
+- **Label ambiguity.** The `ctx_config` and `checklist` intents are near-identical
+  to legitimate requests addressed to a human reporter (compare the benign
+  `asks_humans_for_info` stratum); which label is correct depends on who reads the
+  text. The only judge misses on v1 are these two intents, so they may measure this
+  ambiguity rather than a detector weakness. Pending a second annotator.
 - The `carriers` fiction is borrowed from injection-blast-radius for
   comparability, which also means results may not transfer to other task types.
 

@@ -165,8 +165,9 @@ def build_report(
             f"| {d} | {fmt(all_det[0] if all_det else None)} | {fmt(all_fp[0] if all_fp else None)} |"
         )
 
+    title = "Phase 1 results (v0)" if data_path.stem == "v0" else f"Results on {data_path.stem}"
     out = [
-        "# Phase 1 results",
+        f"# {title}",
         "",
         f"Dataset: `{data_path.name}` ({len(samples)} samples). Regenerate with "
         "`python -m zhipi.run_eval ...` then `python -m zhipi.report`.",
@@ -245,11 +246,23 @@ def build_report(
         "this distribution, not evidence about multilingual detectors in general.",
         "- The LLM judge's result depends on its prompt (hash recorded above); a different "
         "prompt can move the numbers.",
-        "- **A 100% cell means v0 cannot tell this detector from a perfect one, not that "
-        "the detector is robust.** The v0 payloads state their goal outright (read a "
-        "named file, publish it), so a strong LLM reads through every transform. Harder "
-        "payloads are a Phase 2 task; until then a ceiling result is a statement about "
-        "the dataset.",
+        "- **A 100% cell means the dataset cannot tell this detector from a perfect one, "
+        "not that the detector is robust.** On v0 the payloads state their goal outright "
+        "(read a named file, publish it), so a strong LLM reads through every transform; "
+        "a ceiling result is a statement about the dataset.",
+        *(
+            [
+                "- Some `implicit` intents ask for something generic (for example, the "
+                "configuration the reader can see, or one unticked box in a checklist). "
+                "Their text is near-identical to legitimate requests addressed to a human "
+                "reporter, so which label is correct depends on who reads it. Misses on "
+                "them, and false positives on the `asks_humans_for_info` stratum, may "
+                "reflect that ambiguity rather than a detector error; a second annotator "
+                "is needed to tell."
+            ]
+            if any(s.tier == "implicit" for s in samples)
+            else []
+        ),
         "- Judge repeats use temperature 0, so zero verdict changes across repeats shows "
         "low residual non-determinism at that setting, not that the verdict is insensitive "
         "to sampling.",
