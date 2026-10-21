@@ -61,7 +61,11 @@ class PromptGuard2Runner:
         device: str | None = None,
         positive_labels: tuple[str, ...] = ("malicious",),
         role: str = "",
+        max_tokens: int = MAX_TOKENS,
+        stride: int = STRIDE,
     ) -> None:
+        import inspect
+
         import torch
         from transformers import (
             AutoModelForSequenceClassification,
@@ -69,6 +73,8 @@ class PromptGuard2Runner:
         )
 
         self._torch = torch
+        self.max_tokens = max_tokens
+        self.stride = stride
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model_id = model_id
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
@@ -80,6 +86,9 @@ class PromptGuard2Runner:
         self.labels = dict(self.model.config.id2label)
         self.role = role
         self.revision = resolved_revision(model_id, revision)
+        # Some tokenizers (ModernBERT's, for one) return token_type_ids that the model's
+        # forward() does not accept; only pass what it takes.
+        self._accepts = set(inspect.signature(self.model.forward).parameters)
         self._memo: dict[str, float] = {}
 
     def score(self, text: str) -> float:
@@ -88,15 +97,15 @@ class PromptGuard2Runner:
         enc: Any = self.tokenizer(
             text,
             truncation=True,
-            max_length=MAX_TOKENS,
-            stride=STRIDE,
+            max_length=self.max_tokens,
+            stride=self.stride,
             return_overflowing_tokens=True,
             padding=True,
             return_tensors="pt",
         )
         enc.pop("overflow_to_sample_mapping", None)
         enc.pop("num_truncated_tokens", None)
-        batch = {k: v.to(self.device) for k, v in enc.items()}
+        batch = {k: v.to(self.device) for k, v in enc.items() if k in self._accepts}
         with self._torch.no_grad():
             logits = self.model(**batch).logits
         probs = self._torch.softmax(logits, dim=-1)[:, self._malicious].tolist()
@@ -109,8 +118,8 @@ class PromptGuard2Runner:
             "model_id": self.model_id,
             "revision": self.revision,
             "device": self.device,
-            "max_tokens": MAX_TOKENS,
-            "stride": STRIDE,
+            "max_tokens": self.max_tokens,
+            "stride": self.stride,
             "aggregation": "max over windows",
             "labels": {str(k): v for k, v in self.labels.items()},
             "role": self.role,

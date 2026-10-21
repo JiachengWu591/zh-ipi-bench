@@ -46,6 +46,7 @@ def report_path_for(data_path: Path) -> Path:
 KINDS = (
     "keyword-en",
     "keyword-zh",
+    "hf-classifier",
     "prompt-guard-2",
     "community-mbert",
     "qwen3guard",
@@ -112,6 +113,28 @@ def make_defenses(
 
         runner = PromptGuard2Runner(revision=args.pg2_revision)
         return [PromptGuard2Defense(runner, threshold=0.5)], runner.metadata()
+    if kind == "hf-classifier":
+        # Any binary injection classifier on the Hub: pass --hf-model and the label
+        # that means injection. The metadata records the resolved commit.
+        from .adapters.prompt_guard import (
+            PromptGuard2Defense,
+            PromptGuard2Runner,
+        )
+
+        if not args.hf_model:
+            raise ValueError("hf-classifier needs --hf-model")
+        hrunner = PromptGuard2Runner(
+            model_id=args.hf_model,
+            revision=args.hf_revision,
+            positive_labels=tuple(p.strip() for p in args.hf_positive.split(",") if p.strip()),
+            role=args.hf_role,
+            max_tokens=args.hf_max_tokens,
+            stride=args.hf_stride,
+        )
+        name = args.hf_model.split("/")[-1] + "/" + args.hf_threshold_name
+        return [
+            PromptGuard2Defense(hrunner, threshold=args.hf_threshold, name=name)
+        ], {**hrunner.metadata(), "threshold": args.hf_threshold}
     if kind == "community-mbert":
         # Stand-in for the gated Prompt Guard 2: a community multilingual-BERT
         # injection classifier whose card lists Chinese among its training
@@ -227,6 +250,15 @@ def main() -> None:
     parser.add_argument("--pg2-revision", default=None)
     parser.add_argument("--qwen-revision", default=None)
     parser.add_argument("--community-revision", default=None)
+    hf = parser.add_argument_group("hf-classifier (any Hub injection classifier)")
+    hf.add_argument("--hf-model", default="", help="e.g. Horizon-Labs/prompt-injection-guard-base")
+    hf.add_argument("--hf-positive", default="injection", help="label name(s) meaning injection, comma-separated")
+    hf.add_argument("--hf-revision", default=None)
+    hf.add_argument("--hf-role", default="", help="how to label this detector in the report")
+    hf.add_argument("--hf-max-tokens", type=int, default=512)
+    hf.add_argument("--hf-stride", type=int, default=64)
+    hf.add_argument("--hf-threshold", type=float, default=0.5)
+    hf.add_argument("--hf-threshold-name", default="t0.5", help="suffix that distinguishes operating points")
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = raw_dir_for(args.data)
