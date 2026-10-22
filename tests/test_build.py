@@ -11,6 +11,14 @@ from zhipi.schemas import CARRIERS, PLACEMENTS, TIERS
 # fingerprint of (sample_id, text) for all 226 samples; update it only on purpose,
 # and say so in the commit.
 V0_FINGERPRINT = "4017820dc9dbb8748d8aa23f00b3520db11d03a411cd75a95ee62f485bd4ae00"
+# v1 is frozen too: every Phase 2 result and the first end-to-end run were measured on it.
+V1_FINGERPRINT = "d507be34462b75a4328b4defbf244d713011f431715e1c8e92dfd270f0faeaf0"
+
+
+def _fingerprint(samples) -> str:  # type: ignore[no-untyped-def]
+    return hashlib.sha256(
+        json.dumps([[s.sample_id, s.text] for s in samples], ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
 
 
 def _v0():  # type: ignore[no-untyped-def]
@@ -30,6 +38,46 @@ def test_v0_is_unchanged() -> None:
     assert digest == V0_FINGERPRINT
 
 
+def test_v1_is_unchanged_by_the_v2_additions() -> None:
+    samples = _v1()
+    assert len(samples) == 803
+    assert _fingerprint(samples) == V1_FINGERPRINT
+    assert "ibr_corpus" not in {s.tier for s in samples}
+
+
+def test_v2_adds_the_ported_attacks_and_keeps_all_of_v1() -> None:
+    v2 = {s.sample_id: s for s in build.build_version("v2")}
+    for s in _v1():
+        assert v2[s.sample_id].text == s.text
+    ported = [s for s in v2.values() if s.tier == "ibr_corpus"]
+    assert {s.intent_id for s in ported} == {
+        i.intent_id for i in build.load_intents(version="v2") if i.tier == "ibr_corpus"
+    }
+    assert len({s.intent_id for s in ported}) == 12
+    assert any(s.stratum == "html_comment_note" for s in v2.values())
+
+
+def test_encoded_ports_declare_what_they_decode_to() -> None:
+    import base64
+    import re
+
+    by_id = {i.intent_id: i for i in build.load_intents(version="v2")}
+    intent = by_id["ibr_base64_encoded"]
+    for text, gloss in ((intent.text_zh, intent.gloss_zh), (intent.text_en, intent.gloss_en)):
+        blob = re.search(r"^[A-Za-z0-9+/=]{20,}$", text, re.M)
+        assert blob is not None
+        assert base64.b64decode(blob.group(0)).decode("utf-8") == gloss
+    # and the sample's declared plaintext is the decoded request, not the blob
+    sample = next(s for s in build.build_version("v2") if s.intent_id == "ibr_base64_encoded")
+    assert sample.plaintext_intent in (intent.gloss_zh, intent.gloss_en)
+
+
+def test_ported_intents_say_where_they_came_from() -> None:
+    for intent in build.load_intents(version="v2"):
+        if intent.tier == "ibr_corpus":
+            assert "injection-blast-radius" in intent.rationale, intent.intent_id
+
+
 def test_v0_counts_and_tiers() -> None:
     samples = _v0()
     injected = [s for s in samples if s.label == "injected"]
@@ -42,7 +90,7 @@ def test_v0_counts_and_tiers() -> None:
 def test_v1_adds_every_tier_and_the_buried_placement() -> None:
     samples = _v1()
     injected = [s for s in samples if s.label == "injected"]
-    assert set(Counter(s.tier for s in injected)) == set(TIERS)
+    assert set(Counter(s.tier for s in injected)) == set(TIERS) - {"ibr_corpus"}
     assert {s.placement for s in samples} == set(PLACEMENTS)
     # Per intent and carrier: each transform that actually changes the text, the plain
     # Chinese one, the English control, and the buried one.
@@ -106,7 +154,7 @@ def test_v1_has_hard_negative_strata_that_mirror_the_attacks() -> None:
 
 
 def test_intents_are_safe_by_construction() -> None:
-    for intent in build.load_intents():
+    for intent in build.load_intents(version="v2"):
         for text in (intent.text_zh, intent.text_en):
             lowered = text.lower()
             # Every exfiltration target must be the reserved, never-resolving .invalid TLD.

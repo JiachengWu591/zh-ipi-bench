@@ -94,6 +94,33 @@ def test_rerun_resumes_and_does_not_call_the_victim_again(tmp_path) -> None:  # 
     assert len(e2e.load_rows(tmp_path / "e2e.jsonl")) == len(first.calls)
 
 
+def test_rows_are_reused_only_for_byte_identical_samples(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from dataclasses import replace
+
+    injected, benign = e2e.select_samples(_samples())
+    chosen = injected[:3]
+    jobs = e2e.plan(chosen, [], 1)
+    rows = [
+        e2e.E2ERow(s.sample_id, 0, a, True, False, "x", "-", False, "")
+        for s, a, _ in jobs
+    ]
+    changed = [replace(chosen[0], text=chosen[0].text + " edited")] + chosen[1:]
+    out = tmp_path / "e2e.jsonl"
+
+    got = e2e.reusable_rows(rows, chosen, changed, jobs, out)
+    assert {r.sample_id for r in got} == {s.sample_id for s in chosen[1:]}  # edited one dropped
+    assert all(r.completed for r in got)
+
+    # a failed row is never reusable, and a row already in `out` is not copied twice
+    failed = [replace(rows[2], completed=False)]
+    assert e2e.reusable_rows(failed, chosen, chosen, jobs, out) == []
+    e2e.write_rows(rows[:1], out)
+    again = e2e.reusable_rows(rows, chosen, chosen, jobs, out)
+    keys = {(r.sample_id, r.architecture, r.repeat) for r in again}
+    assert (rows[0].sample_id, rows[0].architecture, rows[0].repeat) not in keys
+    assert len(again) == len(rows) - 1
+
+
 def test_a_failing_victim_gives_incomplete_rows_that_are_neither_leak_nor_hold(tmp_path) -> None:  # type: ignore[no-untyped-def]
     class Broken:
         def baseline(self, sample):  # type: ignore[no-untyped-def]

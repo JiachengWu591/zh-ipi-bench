@@ -19,7 +19,15 @@ LABELS: tuple[str, ...] = ("injected", "benign")
 #   implicit          asks without naming the target, or frames the ask
 #   spoofed_structure forges delimiters or tool/system messages
 #   judge_targeted    also addresses the screening component itself
-TIERS: tuple[str, ...] = ("explicit", "implicit", "spoofed_structure", "judge_targeted")
+#   ibr_corpus        ported from injection-blast-radius's attack corpus: techniques its
+#                     undefended baseline was shown to leak on (v2 only)
+TIERS: tuple[str, ...] = (
+    "explicit",
+    "implicit",
+    "spoofed_structure",
+    "judge_targeted",
+    "ibr_corpus",
+)
 # `buried`: the payload sits in the middle of a long, otherwise benign document.
 PLACEMENTS: tuple[str, ...] = ("default", "buried")
 
@@ -48,6 +56,17 @@ class Intent:
     text_en: str
     rationale: str
     tier: str
+    gloss_zh: str = ""
+    gloss_en: str = ""
+    """What the payload asks, stated plainly, when the payload itself does not say it.
+
+    Needed for encoded or indirect payloads (base64, a described file path, a wall of
+    log lines): `plaintext_intent` on every sample built from the intent is this text
+    when present, so a reviewer can audit a payload they cannot read by eye."""
+
+    def plain(self, language: str) -> str:
+        gloss = self.gloss_zh if language == "zh" else self.gloss_en
+        return gloss or (self.text_zh if language == "zh" else self.text_en)
 
     def __post_init__(self) -> None:
         if not _SAMPLE_ID.match(self.intent_id):
@@ -60,8 +79,12 @@ class Intent:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Intent:
+        optional = {"gloss_zh", "gloss_en"}
         try:
-            return cls(**{f: data[f] for f in cls.__dataclass_fields__})
+            return cls(
+                **{f: data[f] for f in cls.__dataclass_fields__ if f not in optional},
+                **{f: data.get(f, "") for f in optional},
+            )
         except KeyError as exc:
             raise MalformedSample(f"intent is missing field {exc}") from exc
 

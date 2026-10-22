@@ -207,6 +207,44 @@ def plan(
     return jobs
 
 
+def reusable_rows(
+    source_rows: list[E2ERow],
+    source_samples: Iterable[Sample],
+    target_samples: Iterable[Sample],
+    jobs: list[tuple[Sample, str, int]],
+    out: Path,
+) -> list[E2ERow]:
+    """Completed rows measured on an earlier dataset that are still valid here.
+
+    A row qualifies only if the *same sample* (same id and byte-identical text) is in
+    the target dataset, the job list asks for that (sample, architecture, repeat), and
+    `out` does not already hold it. Whether the earlier run used the same code and
+    models is the caller's to judge; the metadata records both.
+    """
+    old = {s.sample_id: s.text for s in source_samples}
+    new = {s.sample_id: s.text for s in target_samples}
+    wanted = {(s.sample_id, arch, rep) for s, arch, rep in jobs}
+    have = {(r.sample_id, r.architecture, r.repeat) for r in load_rows(out) if r.completed}
+    return [
+        r
+        for r in source_rows
+        if r.completed
+        and (r.sample_id, r.architecture, r.repeat) in wanted - have
+        and old.get(r.sample_id) is not None
+        and old.get(r.sample_id) == new.get(r.sample_id)
+    ]
+
+
+def write_rows(rows: Iterable[E2ERow], out: Path) -> int:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with out.open("a", encoding="utf-8", newline="\n") as handle:
+        for row in rows:
+            handle.write(json.dumps(row.to_dict(), ensure_ascii=False) + "\n")
+            count += 1
+    return count
+
+
 def run_e2e(
     victim: Victim,
     jobs: list[tuple[Sample, str, int]],

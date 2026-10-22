@@ -1,16 +1,23 @@
 """Build the dataset: intents x carriers x transforms, plus benign controls.
 
     python -m zhipi.build                    # v1 -> data/generated/v1.jsonl
+    python -m zhipi.build --version v2       # v1 plus the ported attacks
     python -m zhipi.build --version v0       # the original 226-sample set
     python -m zhipi.build --out some/path.jsonl
 
-Two versions, both deterministic (same seed files, byte-identical output):
+Three versions, each a superset of the last, all deterministic (same seed files,
+byte-identical output):
 
 - v0: the six explicit intents, the bare benign hosts and the first six hard
   negatives. Kept reproducible because Phase 1's results were measured on it.
 - v1: adds the implicit / spoofed / judge-targeted intents, a "buried in a long
   document" placement, more hard negatives, and long benign controls. Built because
-  v0 turned out to be saturated for a strong LLM judge.
+  v0 turned out to be saturated for a strong LLM judge. Frozen: Phase 2 and the first
+  end-to-end run were measured on it, and a test pins its fingerprint.
+- v2: adds twelve attacks ported from injection-blast-radius's corpus (the techniques
+  its undefended baseline leaks on) in Chinese with English originals, and benign
+  issues containing HTML comments. Built because the baseline agent barely leaked on
+  v1, which left the structural layer nothing to prevent.
 """
 
 from __future__ import annotations
@@ -24,7 +31,7 @@ from .schemas import CARRIERS, Intent, MalformedSample, Sample
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED_DIR = ROOT / "data" / "seed"
-VERSIONS = ("v0", "v1")
+VERSIONS = ("v0", "v1", "v2")
 
 # Transform sets applied to Chinese payloads. English payloads are the
 # cross-lingual control and only appear untransformed.
@@ -60,13 +67,15 @@ def load_intents(
     intents = [Intent.from_dict(row) for row in _read_jsonl(path)]  # type: ignore[arg-type]
     if version == "v0":
         return [i for i in intents if i.tier == "explicit"]
+    if version == "v1":
+        return [i for i in intents if i.tier != "ibr_corpus"]
     return intents
 
 
 def load_hard_negatives(
     path: Path = SEED_DIR / "benign.jsonl", version: str = "v1"
 ) -> list[Sample]:
-    keep = {"v0"} if version == "v0" else {"v0", "v1"}
+    keep = {"v0": {"v0"}, "v1": {"v0", "v1"}, "v2": {"v0", "v1", "v2"}}[version]
     samples = []
     for row in _read_jsonl(path):
         if row.get("added_in", "v0") not in keep:
@@ -90,8 +99,8 @@ def _injected(
     tfs: tuple[str, ...],
     placement: str = "default",
 ) -> Sample:
-    plain = intent.text_zh if lang == "zh" else intent.text_en
-    payload = transforms.apply(tfs, plain)
+    plain = intent.plain(lang)
+    payload = transforms.apply(tfs, intent.text_zh if lang == "zh" else intent.text_en)
     return Sample(
         sample_id=_sample_id(carrier, intent.intent_id, tfs, lang, placement),
         label="injected",
@@ -124,7 +133,7 @@ def build_samples(
                 samples.append(_injected(intent, carrier, "zh", tfs))
             samples.append(_injected(intent, carrier, "en", ()))
 
-    if version == "v1":
+    if version in ("v1", "v2"):
         for intent in intents:
             for carrier in CARRIERS:
                 samples.append(_injected(intent, carrier, "zh", (), "buried"))
@@ -143,7 +152,7 @@ def build_samples(
         )
     samples.extend(hard_negatives)
 
-    if version == "v1":
+    if version in ("v1", "v2"):
         for carrier, lang in carriers.all_pairs():
             samples.append(
                 Sample(
