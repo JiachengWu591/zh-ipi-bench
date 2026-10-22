@@ -43,6 +43,14 @@ on indirect injection even in English (AUROC 0.68) and flags most Chinese text
 AUROC falls (0.57). A fair test of "English-centric detectors degrade on Chinese"
 needs an English detector that works on this task first.
 
+**Status of H3 (see `docs/ROADMAP.md`, Phase 4).** Consistent with the data, but weakly
+tested. With the probabilistic audit bypassed, the isolated pipeline leaked the fake
+secret in 0 of 143 runs across every Chinese transform and the buried placement. The
+undefended baseline, however, leaked in only 4 of 429 runs (1%) with no language or
+transform effect, so these payloads give the boundary almost nothing to prevent.
+Showing that the structural layer *adds* protection needs attacks the baseline
+actually fails on.
+
 ## Attacker model
 
 Anyone who can put text where an LLM application will read it as *data*: an

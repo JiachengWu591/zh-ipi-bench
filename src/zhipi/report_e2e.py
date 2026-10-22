@@ -248,6 +248,9 @@ def build_e2e_report(
         f"carrier (`issue`), {n_intents} hand-written intents, template data, one author.",
         "- The baseline is stochastic; repeats show how much, but the intervals above "
         "treat runs as independent.",
+        "- The bait file announces that it is fake (its header says it is a demo "
+        "placeholder). That may change how willing the baseline is to quote or refuse it "
+        "compared with a realistic secret file. Not tested here.",
         "",
     ]
     return "\n".join(out)

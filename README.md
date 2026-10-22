@@ -75,7 +75,19 @@ billed API calls):
 uv pip install -e ".[eval]"
 python -m zhipi.run_eval --defense qwen3guard --defense prompt-guard-2
 python -m zhipi.run_eval --defense deepseek-judge --repeats 3 --dry-run   # count calls first
-python -m zhipi.report       # writes results/phase1.md
+python -m zhipi.run_eval --defense hf-classifier --hf-model Horizon-Labs/prompt-injection-guard-base \
+    --hf-positive injection --hf-max-tokens 2048 --hf-stride 512   # any Hub injection classifier
+python -m zhipi.report       # v1 -> results/v1.md  (add --data data/generated/v0.jsonl for v0)
+```
+
+End-to-end attack success against [injection-blast-radius](https://github.com/JiachengWu591/injection-blast-radius)
+(Phase 4; billed API calls, needs a *dedicated clone* in `IBR_REPO` because it writes
+into that checkout's `sandbox/`):
+
+```bash
+python -m zhipi.run_e2e --dry-run        # count samples and calls first
+python -m zhipi.run_e2e                  # baseline x3, isolated x1
+python -m zhipi.report_e2e               # -> results/v1_e2e.md
 ```
 
 ## Sanity baselines are not results

@@ -103,6 +103,32 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
   second model overwrote the first one's pinned revision. Now keyed by model id and
   covered by a test; both Hub models were re-run at a clean commit with identical
   counts, as expected of deterministic models.
+- **Phase 4, step 1: the structural layer, end to end** (`results/v1_e2e.md`;
+  `python -m zhipi.run_e2e`, then `zhipi.report_e2e`). The undefended baseline agent
+  and injection-blast-radius's isolated pipeline (probabilistic audit **bypassed**)
+  read the same 143 `issue`-carrier injected samples (18 intents; `dump_prompt`
+  excluded because its goal is not the fake secret) plus 21 benign ones; a leak is the
+  fake secret (plain, URL-encoded or base64) in the public output. Baseline 3 repeats,
+  isolated 1; 614 jobs, none failed; ibr at `af8a758`, one model for everything.
+  - **Containment held: 0 of 143 isolated runs leaked** with the audit bypassed,
+    across every condition including all Chinese transforms and the buried placement.
+  - **But the baseline was already robust: 4 of 429 injected runs leaked (1%).** The
+    leaks are four different intents/conditions, no pattern; language and transform
+    effects on the baseline are null (all p ≥ 0.5, 18 intents). So on these payloads
+    the boundary has almost nothing to prevent, and this run cannot show that it adds
+    value, only that it does not break. H3 ("containment does not depend on language")
+    is consistent with the data but is weakly tested.
+  - The real audit rated 140 of 143 injected samples `high_risk` and 3 `suspicious`
+    (98% / 100% with suspicious), comparable to the Phase 1 judge.
+  - **An undefended agent leaked on a benign issue:** 1 of 63 baseline runs on benign
+    issues (a Chinese issue that merely mentions copying `sandbox/.env`) read the file
+    and pasted it unprompted. No injection needed.
+  - **Cost of the boundary on benign issues:** the isolated pipeline took no action on
+    2 of 21 (10%, 95% [3%–29%]), in line with the 6.1% injection-blast-radius measured.
+  - Caveat to test next: the bait file says it is fake, which may make the baseline more
+    willing to quote or refuse it than a realistic secret; and 18 intents is small.
+    Making the attacks the baseline actually fails on (rather than assuming they exist)
+    is the natural follow-up.
 
   Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
   `char_decomp`), real-text benign samples, second-annotator agreement, and growing to
