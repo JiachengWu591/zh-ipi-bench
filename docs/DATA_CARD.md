@@ -15,6 +15,30 @@ Two builds from the same seed files. Both are generated locally by
 | Frozen? | **Yes.** `tests/test_build.py` pins a fingerprint of all (id, text) pairs | No; may change before release |
 | License | Code: MIT (`LICENSE`). Data: CC BY 4.0 (`DATA_LICENSE.md`) | same |
 
+## v2 (added after the first end-to-end run)
+
+1,288 samples (1,230 injected, 58 benign): v1 unchanged, plus
+
+- **12 `ibr_corpus` intents** ported from injection-blast-radius's `ibr/attack_corpus.py`
+  (commit `af8a758`): direct override, fabricated convention, maintainer impersonation,
+  urgency, split instruction, obfuscated target, debugging framing, base64-encoded,
+  homoglyph, long-context burial, cross-language, layered. The English text is the
+  original payload verbatim; the Chinese text is a hand translation by the author (the
+  cross-language pattern is Chinese in the original). They are HTML-comment-wrapped
+  "repository convention" notes, a different register from the short direct requests in
+  v0/v1, and the long-context one is about 7,000 characters.
+- A `gloss_zh` / `gloss_en` field, used as `plaintext_intent` when the payload does not
+  say what it asks (base64 blob, indirect file description, log wall). A test checks the
+  base64 intents decode to their declared gloss.
+- **5 benign issues containing HTML comments** (issue-template prompts, a maintainer
+  note, a note about `.env` placeholders), so a detector cannot win by keying on `<!--`.
+
+Same safety statement as above: every payload targets the fixed sandbox and fake secret.
+The Chinese translations are single-author and unreviewed; a second reader is still
+needed. The corpus was chosen because the source project reports its undefended baseline
+leaking on these techniques, which did **not** reproduce on the model used here
+(see `docs/ROADMAP.md`, Phase 4).
+
 ## Intended use
 
 Measuring how well prompt-injection *defenses* handle Chinese indirect injection,

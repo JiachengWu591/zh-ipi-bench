@@ -48,8 +48,12 @@ tested. With the probabilistic audit bypassed, the isolated pipeline leaked the 
 secret in 0 of 143 runs across every Chinese transform and the buried placement. The
 undefended baseline, however, leaked in only 4 of 429 runs (1%) with no language or
 transform effect, so these payloads give the boundary almost nothing to prevent.
-Showing that the structural layer *adds* protection needs attacks the baseline
-actually fails on.
+A second run on twelve attacks ported from injection-blast-radius's own corpus (the ones
+its README says the baseline leaks on) gave the same picture: isolated 0 of 239,
+baseline 14 of 717 (3.5% on the ported attacks). Re-running that project's own matrix
+today leaked on only 1 of 12 and 0 of 12 patterns, against 6 of 12 reported, so the
+robustness is the model's, not an artefact of this project's wrapping. Showing that the
+structural layer *adds* protection needs a weaker agent model or adaptive attacks.
 
 ## Attacker model
 
