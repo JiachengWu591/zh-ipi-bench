@@ -53,7 +53,14 @@ its README says the baseline leaks on) gave the same picture: isolated 0 of 239,
 baseline 14 of 717 (3.5% on the ported attacks). Re-running that project's own matrix
 today leaked on only 1 of 12 and 0 of 12 patterns, against 6 of 12 reported, so the
 robustness is the model's, not an artefact of this project's wrapping. Showing that the
-structural layer *adds* protection needs a weaker agent model or adaptive attacks.
+structural layer *adds* protection needed a weaker agent model, so a local
+Qwen2.5-7B-Instruct (Q4_K_M) ran as the brain of both architectures: the undefended
+baseline leaked in 81 of 717 runs (11%), the isolated pipeline with the audit bypassed in
+0 of 239, and the same model acting as the audit rated none of the injected samples
+`high_risk`. H3 is therefore supported for this model and these payloads: containment held
+when the reader was demonstrably capturable and the probabilistic layer was blind. It
+does not depend on the language, but no language effect on the baseline itself was
+established (Chinese 12% vs English 6% by run, not significant per intent).
 
 ## Attacker model
 

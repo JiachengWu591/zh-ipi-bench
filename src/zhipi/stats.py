@@ -6,6 +6,27 @@ import random
 from math import comb, sqrt
 
 
+def fisher_exact(a: int, n1: int, b: int, n2: int) -> float:
+    """Two-sided Fisher exact p-value for a: x/n1 vs b: y/n2 (successes a of n1, b of n2).
+
+    Sums the probability of every table at least as unlikely as the observed one, under
+    the null that both groups share one rate. Uses only integer binomials, so it is
+    exact for the sizes used here. Treats runs as independent, which repeated runs of
+    the same sample are not; read the result as a lower bound on the true p-value.
+    """
+    if min(a, b) < 0 or a > n1 or b > n2 or n1 <= 0 or n2 <= 0:
+        raise ValueError("invalid counts")
+    total, k = n1 + n2, a + b
+    denom = comb(total, k)
+
+    def prob(x: int) -> float:
+        return comb(n1, x) * comb(n2, k - x) / denom
+
+    observed = prob(a)
+    lo, hi = max(0, k - n2), min(k, n1)
+    return min(1.0, sum(prob(x) for x in range(lo, hi + 1) if prob(x) <= observed * (1 + 1e-9)))
+
+
 def auroc(positives: list[float], negatives: list[float]) -> float:
     """P(a random positive scores above a random negative); ties count half.
 

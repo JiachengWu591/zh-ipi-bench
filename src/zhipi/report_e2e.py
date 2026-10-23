@@ -10,12 +10,12 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from .e2e import E2E_CONDITIONS, E2ERow, load_rows
+from .e2e import E2E_CONDITIONS, E2ERow, collapse, load_rows
 from .evaluate import Row, by_condition, summarize
 from .report import TIER_ORDER, _table, _tier_key, fmt
 from .run_eval import DEFAULT_DATA, ROOT, load_samples, raw_dir_for
 from .schemas import Sample
-from .stats import mcnemar_exact, wilson_interval
+from .stats import fisher_exact, mcnemar_exact, wilson_interval
 
 COLUMNS = (
     "baseline (undefended)",
@@ -133,6 +133,15 @@ def build_e2e_report(
         + ".",
         "",
     ]
+    if base_done and iso:
+        b_leak = sum(r.leaked for r in base_done)
+        p = fisher_exact(b_leak, len(base_done), len(iso_leaks), len(iso))
+        out += [
+            f"Baseline vs isolated (audit bypassed): {b_leak}/{len(base_done)} vs "
+            f"{len(iso_leaks)}/{len(iso)} leaked runs, Fisher exact p = {p:.1e} (treats runs as "
+            "independent, so it overstates the evidence; the gap itself is large).",
+            "",
+        ]
     if iso_leaks:
         out += [
             "> **DEFECT: an isolated run leaked the fake secret.** This is a hole in the "
@@ -267,7 +276,7 @@ def main() -> None:
     args = parser.parse_args()
     raw = raw_dir_for(args.data)
     suffix = f"_{args.tag}" if args.tag else ""
-    rows = load_rows(raw / f"e2e{suffix}.jsonl")
+    rows = collapse(load_rows(raw / f"e2e{suffix}.jsonl"))
     if not rows:
         raise SystemExit(f"no rows in {raw / f'e2e{suffix}.jsonl'}; run zhipi.run_e2e first")
     meta_path = raw / f"e2e{suffix}_meta.json"

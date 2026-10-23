@@ -92,6 +92,23 @@ python -m zhipi.run_e2e                  # baseline x3, isolated x1
 python -m zhipi.report_e2e               # -> results/v1_e2e.md
 ```
 
+To run **both architectures on one local model** (free; shows the boundary when the model
+is easy to capture), serve an OpenAI-compatible model with llama.cpp and point the run at it:
+
+```bash
+# llama.cpp b11829 (CUDA 12.4 build) and the official Qwen2.5-7B-Instruct Q4_K_M GGUF
+llama-server -m qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf --jinja -ngl 99 -c 12288 \
+    --host 127.0.0.1 --port 8080 --alias qwen2.5-7b-instruct
+python -m zhipi.run_e2e --data data/generated/v2.jsonl --tag qwen25-7b \
+    --victim-base-url http://127.0.0.1:8080/v1 --victim-model qwen2.5-7b-instruct \
+    --tool-choice-mode required
+python -m zhipi.report_e2e --data data/generated/v2.jsonl --tag qwen25-7b
+```
+
+(`required`, not the named tool choice injection-blast-radius sends, because llama.cpp did
+not honour a named choice in testing; the pipeline still checks which tool and arguments
+come back. Bind the server to 127.0.0.1 only.)
+
 ## Sanity baselines are not results
 
 `keyword-en` and `keyword-zh` exist to test the harness. They are deliberately

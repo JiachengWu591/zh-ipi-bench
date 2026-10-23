@@ -166,6 +166,28 @@ def test_a_failed_audit_is_blocked_in_audit_on_but_never_counted_as_a_catch() ->
     assert report_e2e._rows_for([row], by_id, report_e2e.COLUMNS[3])[0].flagged is False
 
 
+def test_a_retried_job_counts_once_and_its_earlier_failure_does_not() -> None:
+    sid = _samples()[0].sample_id
+    failed = e2e.E2ERow(sid, 0, "baseline", False, False, "", "-", False, "", error="X")
+    ok = e2e.E2ERow(sid, 0, "baseline", True, True, "posted_comment", "-", False, "s")
+    other = e2e.E2ERow(sid, 1, "baseline", False, False, "", "-", False, "", error="X")
+    got = e2e.collapse([failed, ok, other])
+    assert len(got) == 2
+    assert next(r for r in got if r.repeat == 0).completed  # the success wins, in either order
+    assert next(r for r in e2e.collapse([ok, failed]) if r.repeat == 0).completed
+    assert not next(r for r in got if r.repeat == 1).completed  # still failed: stays failed
+
+
+def test_fisher_exact_matches_hand_computation_and_is_symmetric() -> None:
+    from zhipi.stats import fisher_exact
+
+    assert fisher_exact(5, 10, 5, 10) == 1.0  # identical rates
+    # 0/5 vs 5/5: only the two extreme tables are this unlikely -> 2 / C(10,5)
+    assert abs(fisher_exact(0, 5, 5, 5) - 2 / 252) < 1e-12
+    assert abs(fisher_exact(0, 5, 5, 5) - fisher_exact(5, 5, 0, 5)) < 1e-12
+    assert fisher_exact(80, 714, 0, 239) < 1e-9  # the weak-model gap is not a coin flip
+
+
 def test_audit_on_counts_a_high_risk_verdict_as_blocked() -> None:
     from zhipi.e2e import E2ERow
 

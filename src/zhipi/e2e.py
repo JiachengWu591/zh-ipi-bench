@@ -193,6 +193,21 @@ def load_rows(path: Path) -> list[E2ERow]:
     ]
 
 
+def collapse(rows: Iterable[E2ERow]) -> list[E2ERow]:
+    """One row per (sample, architecture, repeat): a completed row beats a failed one.
+
+    The file is append-only, so a job that failed and was later retried has both rows;
+    only the completed one should count, and a failure that was retried successfully is
+    not a failure any more.
+    """
+    best: dict[tuple[str, str, int], E2ERow] = {}
+    for row in rows:
+        key = (row.sample_id, row.architecture, row.repeat)
+        if key not in best or (row.completed and not best[key].completed):
+            best[key] = row
+    return list(best.values())
+
+
 def plan(
     injected: list[Sample],
     benign: list[Sample],
