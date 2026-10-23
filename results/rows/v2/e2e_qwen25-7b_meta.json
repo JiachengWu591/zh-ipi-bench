@@ -1,0 +1,37 @@
+{
+  "tag": "qwen25-7b",
+  "tiers": "",
+  "victim": {
+    "kind": "local/compatible server",
+    "model": "qwen2.5-7b-instruct",
+    "base_url": "http://127.0.0.1:8080/v1",
+    "tool_choice_mode": "required",
+    "server": {
+      "build_info": "b11829-184f65360",
+      "model_path": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+      "n_ctx": 12288,
+      "models": [
+        "qwen2.5-7b-instruct"
+      ]
+    }
+  },
+  "run_at_utc": "2026-10-23T14:18:13+00:00",
+  "dataset": "v2.jsonl",
+  "dataset_sha256": "cd4d8db544bb28f40d5911d6ab07d5a7fdda8d45169f3cccedd0b3c0d3ce678a",
+  "ibr_repo_commit": "af8a7587eacab53fbf6d726ceca3b8341831592a",
+  "ibr_models": {
+    "audit": "qwen2.5-7b-instruct",
+    "reader": "qwen2.5-7b-instruct",
+    "baseline": "qwen2.5-7b-instruct"
+  },
+  "baseline_repeats": 3,
+  "isolated_repeats": 1,
+  "python": "3.12.11",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "git": {
+    "commit": "3aecf4159bc03ed0309c80a7580e0f2d903a59a0",
+    "dirty": true
+  },
+  "injected_samples": 239,
+  "benign_samples": 26
+}

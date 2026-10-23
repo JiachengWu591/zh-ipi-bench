@@ -1,0 +1,155 @@
+{
+  "keyword-en": {
+    "role": "sanity baseline",
+    "run_at_utc": "2026-10-21T13:58:17+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "5a33a75e43950d0c4353defb6174a2bcc1538e39",
+      "dirty": false
+    }
+  },
+  "keyword-zh": {
+    "role": "sanity baseline",
+    "run_at_utc": "2026-10-21T13:58:17+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "5a33a75e43950d0c4353defb6174a2bcc1538e39",
+      "dirty": false
+    }
+  },
+  "deepseek-judge": {
+    "model_id": "deepseek-v4-flash",
+    "prompt_hash": "f5243ad501f5",
+    "temperature": 0.0,
+    "tool_choice": "forced",
+    "thinking": "disabled",
+    "run_at_utc": "2026-10-21T13:58:17+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "5a33a75e43950d0c4353defb6174a2bcc1538e39",
+      "dirty": false
+    }
+  },
+  "community-mbert": {
+    "model_id": "devndeploy/bert-prompt-injection-detector",
+    "revision": "63bf478b076eacd6eb29a6268cf53775f33042f5",
+    "device": "cpu",
+    "max_tokens": 512,
+    "stride": 64,
+    "aggregation": "max over windows",
+    "labels": {
+      "0": "NORMAL",
+      "1": "INJECTION"
+    },
+    "role": "community model, unvetted (stand-in for gated Prompt Guard 2)",
+    "run_at_utc": "2026-10-21T14:00:16+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "5a33a75e43950d0c4353defb6174a2bcc1538e39",
+      "dirty": false
+    }
+  },
+  "qwen3guard": {
+    "model_id": "Qwen/Qwen3Guard-Gen-0.6B",
+    "revision": "fada3b2f655b89601929198343c94cd2f64d93cc",
+    "device": "cpu",
+    "decoding": "greedy",
+    "max_new_tokens": 64,
+    "role": "wrong-tool control (content moderation, not injection detection)",
+    "run_at_utc": "2026-10-21T14:25:44+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "5a33a75e43950d0c4353defb6174a2bcc1538e39",
+      "dirty": false
+    }
+  },
+  "hf-classifier:Horizon-Labs/prompt-injection-guard-base": {
+    "model_id": "Horizon-Labs/prompt-injection-guard-base",
+    "revision": "495ee67524911c8409f7aec7b5f135b94aef15ea",
+    "device": "cpu",
+    "max_tokens": 2048,
+    "stride": 512,
+    "aggregation": "max over windows",
+    "labels": {
+      "0": "SAFE",
+      "1": "INJECTION"
+    },
+    "role": "Horizon-Labs multilingual agent-oriented classifier; author-reported metrics, not independently verified",
+    "threshold": 0.5,
+    "run_at_utc": "2026-10-21T16:45:07+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "781141bec0335022a31bc9cd6bc0fdc79deb5393",
+      "dirty": false
+    }
+  },
+  "hf-classifier:protectai/deberta-v3-base-prompt-injection-v2": {
+    "model_id": "protectai/deberta-v3-base-prompt-injection-v2",
+    "revision": "90c9989b1a342275dd0d1a95aad283c04e075671",
+    "device": "cpu",
+    "max_tokens": 512,
+    "stride": 64,
+    "aggregation": "max over windows",
+    "labels": {
+      "0": "SAFE",
+      "1": "INJECTION"
+    },
+    "role": "English-only, widely used (English-centric control); card states English only",
+    "threshold": 0.5,
+    "run_at_utc": "2026-10-21T16:48:28+00:00",
+    "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "781141bec0335022a31bc9cd6bc0fdc79deb5393",
+      "dirty": false
+    }
+  }
+}

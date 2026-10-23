@@ -1,0 +1,21 @@
+{
+  "run_at_utc": "2026-10-22T09:37:18+00:00",
+  "dataset": "v1.jsonl",
+  "dataset_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+  "ibr_repo_commit": "af8a7587eacab53fbf6d726ceca3b8341831592a",
+  "ibr_models": {
+    "audit": "deepseek-v4-flash",
+    "reader": "deepseek-v4-flash",
+    "baseline": "deepseek-v4-flash"
+  },
+  "baseline_repeats": 3,
+  "isolated_repeats": 1,
+  "python": "3.12.11",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "git": {
+    "commit": "78a59380fe52f08eb45fbaff8eba0caf6050c3ad",
+    "dirty": false
+  },
+  "injected_samples": 143,
+  "benign_samples": 21
+}

@@ -1,0 +1,29 @@
+{
+  "note": "Content identity of each dataset version. `fingerprint` hashes (sample_id, text) pairs; `file_sha256` hashes the JSONL bytes as written by `python -m zhipi.build`. v0 and v1 are frozen.",
+  "datasets": {
+    "v0": {
+      "samples": 226,
+      "injected": 210,
+      "benign": 16,
+      "fingerprint": "4017820dc9dbb8748d8aa23f00b3520db11d03a411cd75a95ee62f485bd4ae00",
+      "file_sha256": "5846caf9e770b29654ff63179dc3d100473d74eef26b887876d76feb6870bbb9",
+      "file_bytes": 159055
+    },
+    "v1": {
+      "samples": 803,
+      "injected": 750,
+      "benign": 53,
+      "fingerprint": "d507be34462b75a4328b4defbf244d713011f431715e1c8e92dfd270f0faeaf0",
+      "file_sha256": "bbd784503d6ecbfad39aba216341080f1053f3390cd9061c56e6842d3e300efa",
+      "file_bytes": 697197
+    },
+    "v2": {
+      "samples": 1288,
+      "injected": 1230,
+      "benign": 58,
+      "fingerprint": "7d478b6ade3c668e418da54cc9407d10d8ca403f644597ad418e3ef8a6538b6c",
+      "file_sha256": "cd4d8db544bb28f40d5911d6ab07d5a7fdda8d45169f3cccedd0b3c0d3ce678a",
+      "file_bytes": 1639343
+    }
+  }
+}

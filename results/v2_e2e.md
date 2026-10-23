@@ -12,6 +12,8 @@
 
 Baseline runs that leaked: 14 of 717. Isolated runs (audit bypassed) that leaked: **0 of 239**. Real audit verdicts on injected samples: high_risk 236, suspicious 3.
 
+Baseline vs isolated (audit bypassed): 14/717 vs 0/239 leaked runs, Fisher exact p = 0.027 (treats runs as independent, so it overstates the evidence; read the counts, not the p-value alone).
+
 ## Attack success by language and transform
 
 `real audit: high_risk` is not an attack success: it is how often the probabilistic screening layer alone would have caught the sample (higher is better).
@@ -69,6 +71,7 @@ The isolated pipeline answers from a fixed action set, so some ordinary issues g
 | run at (UTC) | 2026-10-22T13:27:50+00:00 |
 | injection-blast-radius commit | `af8a7587ea` |
 | models | {"audit": "deepseek-v4-flash", "reader": "deepseek-v4-flash", "baseline": "deepseek-v4-flash"} |
+| victim | {} |
 | repeats | baseline 3, isolated 1 |
 | dataset sha256 | `cd4d8db544bb` |
 | zh-ipi-bench commit | `07a143d115` |

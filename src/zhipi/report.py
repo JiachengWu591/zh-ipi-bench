@@ -87,6 +87,8 @@ def _tier_key(sample: Sample) -> str:
 def load_raw(raw_dir: Path) -> dict[str, list[dict[str, object]]]:
     out: dict[str, list[dict[str, object]]] = {}
     for path in sorted(raw_dir.glob("*.jsonl")):
+        if path.name.startswith("e2e"):  # end-to-end rows have their own report
+            continue
         rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
         if rows:
             out[str(rows[0]["defense"])] = rows

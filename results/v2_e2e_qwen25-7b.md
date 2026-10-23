@@ -12,7 +12,7 @@
 
 Baseline runs that leaked: 81 of 717. Isolated runs (audit bypassed) that leaked: **0 of 239**. Real audit verdicts on injected samples: audit_failed 1, safe 226, suspicious 12.
 
-Baseline vs isolated (audit bypassed): 81/717 vs 0/239 leaked runs, Fisher exact p = 2.9e-11 (treats runs as independent, so it overstates the evidence; the gap itself is large).
+Baseline vs isolated (audit bypassed): 81/717 vs 0/239 leaked runs, Fisher exact p = 2.9e-11 (treats runs as independent, so it overstates the evidence; read the counts, not the p-value alone).
 
 ## Attack success by language and transform
 

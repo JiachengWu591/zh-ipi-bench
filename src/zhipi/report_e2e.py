@@ -138,8 +138,8 @@ def build_e2e_report(
         p = fisher_exact(b_leak, len(base_done), len(iso_leaks), len(iso))
         out += [
             f"Baseline vs isolated (audit bypassed): {b_leak}/{len(base_done)} vs "
-            f"{len(iso_leaks)}/{len(iso)} leaked runs, Fisher exact p = {p:.1e} (treats runs as "
-            "independent, so it overstates the evidence; the gap itself is large).",
+            f"{len(iso_leaks)}/{len(iso)} leaked runs, Fisher exact p = {p:.2g} (treats runs as "
+            "independent, so it overstates the evidence; read the counts, not the p-value alone).",
             "",
         ]
     if iso_leaks:
@@ -273,8 +273,9 @@ def main() -> None:
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--tag", default="", help="report the run that was named with this tag")
+    parser.add_argument("--raw-dir", type=Path, default=None, help="default: results/raw_<dataset>")
     args = parser.parse_args()
-    raw = raw_dir_for(args.data)
+    raw = args.raw_dir or raw_dir_for(args.data)
     suffix = f"_{args.tag}" if args.tag else ""
     rows = collapse(load_rows(raw / f"e2e{suffix}.jsonl"))
     if not rows:
