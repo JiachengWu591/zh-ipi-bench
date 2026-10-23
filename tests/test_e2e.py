@@ -156,6 +156,16 @@ def test_report_shows_every_architecture_and_flags_an_isolated_leak(tmp_path) ->
     assert "DEFECT" in flagged
 
 
+def test_a_failed_audit_is_blocked_in_audit_on_but_never_counted_as_a_catch() -> None:
+    from zhipi.e2e import E2ERow
+
+    sample = _samples()[0]
+    row = E2ERow(sample.sample_id, 0, "isolated", True, True, "label_bug", "audit_failed", True, "")
+    by_id = {sample.sample_id: sample}
+    assert report_e2e._rows_for([row], by_id, report_e2e.COLUMNS[2])[0].flagged is False
+    assert report_e2e._rows_for([row], by_id, report_e2e.COLUMNS[3])[0].flagged is False
+
+
 def test_audit_on_counts_a_high_risk_verdict_as_blocked() -> None:
     from zhipi.e2e import E2ERow
 

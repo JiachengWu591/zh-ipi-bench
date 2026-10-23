@@ -37,6 +37,27 @@ BASELINE_MAX_TURNS = 6  # injection-blast-radius's cap; an upper bound on calls 
 ISOLATED_CALLS = 2  # audit + reader
 
 
+def _server_info(base_url: str) -> dict[str, object]:
+    """Best-effort description of a local server (llama.cpp exposes /props)."""
+    import urllib.request  # noqa: PLC0415
+
+    root = base_url.rsplit("/v1", 1)[0].rstrip("/")
+    info: dict[str, object] = {}
+    for path in ("/props", "/v1/models"):
+        try:
+            with urllib.request.urlopen(root + path, timeout=10) as response:  # noqa: S310
+                data = json.loads(response.read().decode("utf-8"))
+        except Exception:  # noqa: BLE001 - metadata only; the run must not depend on it
+            continue
+        if path == "/props":
+            info["build_info"] = data.get("build_info")
+            info["model_path"] = Path(str(data.get("model_path", ""))).name or None
+            info["n_ctx"] = (data.get("default_generation_settings") or {}).get("n_ctx")
+        else:
+            info["models"] = [m.get("id") for m in data.get("data", [])]
+    return info
+
+
 def _git_head(repo: str) -> str:
     out = subprocess.run(  # noqa: S603
         ["git", "-C", repo, "rev-parse", "HEAD"], capture_output=True, text=True, check=False
@@ -52,6 +73,11 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0, help="trial run: roughly this many samples")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--ibr-repo", default="")
+    parser.add_argument("--tag", default="", help="name this run (e.g. weak-model); output files get the tag")
+    parser.add_argument("--tiers", default="", help="only these intent tiers, comma-separated (injected samples)")
+    parser.add_argument("--victim-base-url", default="", help="OpenAI-compatible server for BOTH architectures, e.g. http://127.0.0.1:8080/v1")
+    parser.add_argument("--victim-model", default="", help="model name sent to that server")
+    parser.add_argument("--tool-choice-mode", default="named", choices=("named", "required", "auto"))
     parser.add_argument(
         "--reuse-from-data",
         type=Path,
@@ -67,13 +93,18 @@ def main() -> None:
 
     samples = load_samples(args.data)
     injected, benign = select_samples(samples)
+    if args.tiers:
+        wanted_tiers = {t.strip() for t in args.tiers.split(",") if t.strip()}
+        injected = [s for s in injected if s.tier in wanted_tiers]
     if args.limit:
         step_i = max(1, len(injected) // max(1, args.limit * 7 // 8))
         step_b = max(1, len(benign) // max(1, args.limit // 8))
         injected, benign = injected[::step_i], benign[::step_b]
     jobs = plan(injected, benign, args.baseline_repeats, args.isolated_repeats)
     out_dir = raw_dir_for(args.data)
-    out = out_dir / "e2e.jsonl"
+    suffix = f"_{args.tag}" if args.tag else ""
+    out = out_dir / f"e2e{suffix}.jsonl"
+    local = bool(args.victim_base_url)
 
     reusable: list[E2ERow] = []
     reuse_meta: dict[str, object] = {}
@@ -102,17 +133,37 @@ def main() -> None:
     print(
         f"{len(injected)} injected + {len(benign)} benign samples (carrier=issue; conditions: "
         f"{', '.join(E2E_CONDITIONS)})\n"
-        f"{n_base} baseline runs + {n_iso} isolated runs; billed API calls: at least {low}, "
-        f"at most about {high}"
+        f"{n_base} baseline runs + {n_iso} isolated runs; "
+        + (
+            f"local model calls (free): at least {low}, at most about {high}"
+            if local
+            else f"billed API calls: at least {low}, at most about {high}"
+        )
     )
     if args.dry_run:
         return
 
     from .adapters.ibr_e2e import IbrVictim
 
-    victim = IbrVictim(args.ibr_repo or None)
+    request_log: list[dict[str, object]] = []
+    victim = IbrVictim(
+        args.ibr_repo or None,
+        base_url=args.victim_base_url or None,
+        model=args.victim_model or None,
+        tool_choice_mode=args.tool_choice_mode,
+        request_log=request_log,
+    )
     meta = {
         **reuse_meta,
+        "tag": args.tag,
+        "tiers": args.tiers,
+        "victim": {
+            "kind": "local/compatible server" if local else "injection-blast-radius default (DeepSeek)",
+            "model": args.victim_model or None,
+            "base_url": args.victim_base_url or None,
+            "tool_choice_mode": victim.tool_choice_mode,
+            "server": _server_info(args.victim_base_url) if local else None,
+        },
         "run_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "dataset": args.data.name,
         "dataset_sha256": hashlib.sha256(args.data.read_bytes()).hexdigest(),
@@ -127,7 +178,7 @@ def main() -> None:
         "benign_samples": len(benign),
     }
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "e2e_meta.json").write_text(
+    (out_dir / f"e2e{suffix}_meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     if reusable:

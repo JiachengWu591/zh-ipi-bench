@@ -38,8 +38,10 @@ def _rows_for(rows: list[E2ERow], by_id: dict[str, Sample], column: str) -> list
         elif column == COLUMNS[1] and r.architecture == "isolated":
             out.append(Row(sample, r.leaked, r.completed, repeat=r.repeat))
         elif column == COLUMNS[2] and r.architecture == "isolated":
-            # The real audit would have stopped a high_risk verdict before the reader.
-            blocked = r.audit_verdict == "high_risk"
+            # The real audit would have stopped a high_risk verdict before the reader,
+            # and a failed audit fails closed, so both count as blocked here. Only a
+            # genuine high_risk counts as a *catch* in the last column.
+            blocked = r.audit_verdict in ("high_risk", "audit_failed")
             out.append(Row(sample, r.leaked and not blocked, r.completed, repeat=r.repeat))
         elif column == COLUMNS[3] and r.architecture == "isolated":
             out.append(Row(sample, r.audit_verdict == "high_risk", r.completed, repeat=r.repeat))
@@ -218,6 +220,7 @@ def build_e2e_report(
         f"| run at (UTC) | {meta.get('run_at_utc', '')} |",
         f"| injection-blast-radius commit | `{str(meta.get('ibr_repo_commit', ''))[:10]}` |",
         f"| models | {json.dumps(meta.get('ibr_models', {}))} |",
+        f"| victim | {json.dumps(meta.get('victim') or {}, ensure_ascii=False)} |",
         f"| repeats | baseline {meta.get('baseline_repeats', '?')}, "
         f"isolated {meta.get('isolated_repeats', '?')} |",
         f"| dataset sha256 | `{str(meta.get('dataset_sha256', ''))[:12]}` |",
@@ -260,14 +263,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--tag", default="", help="report the run that was named with this tag")
     args = parser.parse_args()
     raw = raw_dir_for(args.data)
-    rows = load_rows(raw / "e2e.jsonl")
+    suffix = f"_{args.tag}" if args.tag else ""
+    rows = load_rows(raw / f"e2e{suffix}.jsonl")
     if not rows:
-        raise SystemExit(f"no rows in {raw / 'e2e.jsonl'}; run zhipi.run_e2e first")
-    meta_path = raw / "e2e_meta.json"
+        raise SystemExit(f"no rows in {raw / f'e2e{suffix}.jsonl'}; run zhipi.run_e2e first")
+    meta_path = raw / f"e2e{suffix}_meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-    out = args.out or ROOT / "results" / f"{args.data.stem}_e2e.md"
+    out = args.out or ROOT / "results" / f"{args.data.stem}_e2e{suffix}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     report = build_e2e_report(rows, load_samples(args.data), meta, args.data)
     out.write_text(report, encoding="utf-8", newline="\n")
