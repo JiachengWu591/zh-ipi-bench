@@ -5,7 +5,12 @@ type: software
 authors:
   - family-names: "Wu"
     given-names: "Jiacheng"
-version: 0.0.1
+abstract: >-
+  A Chinese-native benchmark for indirect prompt injection (instructions hidden in
+  issues, documents, emails, web pages and tool outputs), with Chinese-specific
+  obfuscations, benign hard negatives, a detector evaluation harness, and an end-to-end
+  test of architectural isolation. Code is MIT; data is CC BY 4.0.
+version: 0.1.0
 repository-code: "https://github.com/JiachengWu591/zh-ipi-bench"
 license: MIT
 keywords:

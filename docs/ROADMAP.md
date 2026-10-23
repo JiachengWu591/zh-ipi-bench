@@ -193,6 +193,18 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
     the model or on Chinese. It does not show the boundary is unbeatable (the executor can
     only post four static templates, so zero leaks is by construction), and it does not
     show a language effect.
+- **Phase 5: release, prepared (not yet published).** Done in the repository:
+  - `results/rows/` (6.1 MB of per-sample rows, scanned for keys, emails and local paths)
+    and `release/MANIFEST.json` (checksums of v0/v1/v2);
+  - `python -m zhipi.verify`, which rebuilds the data and regenerates every table in
+    `results/` from the rows with no model, key or network, plus a test that runs it in CI;
+  - the technical report `paper/REPORT.md` (numbers spot-checked against the rows);
+  - the Hugging Face dataset card (`release/DATASET_CARD.md`) and `python -m zhipi.release
+    dist`, which builds the upload folder;
+  - README front page, `CHANGELOG.md`, version 0.1.0, CITATION.
+  Needs the owner (outward-facing or account-bound): creating the Hugging Face dataset and
+  uploading it, bundling the CC BY 4.0 legal text (a download), tagging `v0.1.0` and
+  creating a GitHub release, and converting the report to LaTeX/PDF if it goes to arXiv.
 
   Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
   `char_decomp`), real-text benign samples, second-annotator agreement, and growing to

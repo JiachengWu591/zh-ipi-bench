@@ -6,7 +6,10 @@
 
 *A Chinese-native benchmark for indirect prompt injection: instructions hidden in the documents, web pages, emails, and tool outputs an LLM application reads as data.*
 
-> **Status: Phase 0 (scaffold). No results yet.** The dataset generator, harness, and tests run; no real detector has been evaluated. Numbers will appear here only when they come with intervals and a command that reproduces them.
+> **Status: v0.1, a research artifact.** One author, template-generated data, no second
+> annotator yet. Every number below is reproduced offline from committed result rows by
+> `python -m zhipi.verify`; the [technical report](paper/REPORT.md) says what each result
+> does and does not show. Dataset card: [release/DATASET_CARD.md](release/DATASET_CARD.md).
 
 ## Why this exists
 
@@ -34,6 +37,26 @@ whether the *probabilistic* layer degrades on Chinese input, and whether the
 
 Details: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
+## Results at a glance
+
+| question | finding (v1 / v2 data; 95% intervals in the reports) |
+|---|---|
+| Do detectors work on Chinese indirect injection? | A strong LLM judge: 97% detection, 2% false positives. A small multilingual classifier: 80% / 13%. A community classifier flagged **everything**; an English-only one flagged **55%** of benign text. |
+| H1: do Chinese-specific transforms hurt? | **Not supported** for the two detectors that work (fullwidth, zero-width, spaced, code-mixed: no measurable effect). A language gap in detection *rate* (97% vs 81%) was mostly calibration (AUROC 0.97 vs 0.94). Burying the payload in a long document did hurt (AUROC 0.94 → 0.89). |
+| H2: benign look-alikes | Hard negatives separate detectors that headline detection cannot (e.g. a request to a *human* to paste their config). |
+| H3: does isolation contain injections? | With the audit bypassed the isolated pipeline leaked a planted fake secret in **0 of 239** runs. On a strong model the undefended baseline barely leaked (2%), so isolation had little to prevent; with a weak local model (Qwen2.5-7B) the baseline leaked in **81 of 717 (11%)**. |
+
+Not shown: a language effect on the undefended baseline, anything about real-world attack
+distributions, or that the boundary is unbeatable. Tables: [`results/`](results/). Full
+account: [`paper/REPORT.md`](paper/REPORT.md).
+
+## Reproduce the tables (no model, no key, no network)
+
+```bash
+uv venv && uv pip install -e ".[dev]"
+python -m zhipi.verify        # rebuilds the data, regenerates every table, compares to results/
+```
+
 ## What's here
 
 ```
@@ -44,11 +67,20 @@ src/zhipi/
   build.py        intents × carriers × transforms (+ benign controls) -> JSONL
   defenses.py     Defense protocol, fail-closed wrapper, keyword sanity baselines
   evaluate.py     run a defense, summarize per group with 95% Wilson intervals
-  adapters/       prompt_guard · qwen3guard · deepseek_judge · ibr_adapter (each a Defense)
+  adapters/       prompt_guard · qwen3guard · deepseek_judge · ibr_adapter · ibr_e2e ·
+                  openai_compat (each detector is a Defense; ibr_e2e is the end-to-end victim)
   cache.py        append-only response cache (failures are never cached)
   run_eval.py     run detectors over the dataset -> raw rows + run metadata
-  report.py       raw rows -> results/phase1.md (never calls a model)
+  report.py       detector rows -> tables, with Wilson / McNemar / AUROC (never calls a model)
+  e2e.py          end-to-end attack success: leak criterion, resumable runner
+  run_e2e.py      run both architectures against injection-blast-radius
+  report_e2e.py   end-to-end rows -> tables
+  release.py      pack result rows, dataset manifest, dataset release folder
+  verify.py       reproduce the released tables from the committed rows
 data/seed/        hand-written intents and hard-negative benign text
+results/          the tables; results/rows/ holds the per-sample rows behind them
+release/          dataset card template, checksum manifest
+paper/            the technical report
 docs/             threat model, related work, roadmap, data card
 tests/            offline tests (no model, network, or key needed)
 ```
