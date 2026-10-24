@@ -3,13 +3,14 @@
     python -m zhipi.verify            # check; exit code 1 if anything differs
     python -m zhipi.verify --update   # rewrite results/*.md from the rows (after a code change)
 
-Three checks:
+Four checks:
 
 1. every dataset version rebuilds from the seed files to the checksum in
    `release/MANIFEST.json` (so v0 and v1 really are frozen);
 2. every table in `results/*.md` is regenerated from `results/rows/` and compared
    byte for byte with the committed file;
-3. nothing here calls a model, so a pass means the numbers in the report are a pure
+3. the README figure `assets/results.svg` is regenerated the same way;
+4. nothing here calls a model, so a pass means the numbers in the report are a pure
    function of the committed rows and the committed code.
 
 What a pass does NOT show: that the rows themselves are right (they came from model
@@ -26,6 +27,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from . import figure
 from .e2e import collapse, load_rows
 from .release import MANIFEST, ROWS_DIR, dataset_entries
 from .report import build_report, load_raw
@@ -33,6 +35,7 @@ from .report_e2e import build_e2e_report
 from .run_eval import ROOT, load_samples
 
 RESULTS = ROOT / "results"
+FIGURE = figure.OUT
 
 
 @dataclass(frozen=True)
@@ -101,7 +104,24 @@ def run(update: bool = False) -> list[tuple[str, bool, str]]:
                 results.append((f"report {job.report}", True, f"{len(text):,} chars identical"))
             else:
                 results.append((f"report {job.report}", False, "differs from the committed file"))
+    results.append(_check_figure(update))
     return results
+
+
+def _check_figure(update: bool) -> tuple[str, bool, str]:
+    name = f"figure {FIGURE.relative_to(ROOT).as_posix()}"
+    try:
+        text = figure.render()
+    except Exception as exc:  # noqa: BLE001 - reported, not hidden
+        return (name, False, f"could not regenerate: {type(exc).__name__}: {exc}")
+    if update:
+        FIGURE.parent.mkdir(parents=True, exist_ok=True)
+        FIGURE.write_text(text, encoding="utf-8", newline="\n")
+        return (name, True, "rewritten")
+    current = FIGURE.read_text(encoding="utf-8") if FIGURE.exists() else None
+    if current == text:
+        return (name, True, f"{len(text):,} chars identical")
+    return (name, False, "differs from the committed file")
 
 
 def main() -> None:

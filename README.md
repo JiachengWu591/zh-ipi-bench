@@ -1,5 +1,7 @@
 # zh-ipi-bench
 
+**English** · [简体中文](README.zh-CN.md)
+
 [![tests](https://github.com/JiachengWu591/zh-ipi-bench/actions/workflows/tests.yml/badge.svg)](https://github.com/JiachengWu591/zh-ipi-bench/actions/workflows/tests.yml)
 [![code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightgrey.svg)](DATA_LICENSE.md)
@@ -41,6 +43,20 @@ Details: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ## Results at a glance
 
+**In short.** On Chinese indirect injections, only a strong LLM judge (97% detection, 2%
+false positives) and a small multilingual classifier (80% / 13%) were usable as detectors; the
+other off-the-shelf ones either flagged nearly everything or caught almost nothing. The
+Chinese-specific obfuscations I tried did not measurably hurt the detectors that worked.
+At the architecture level, a pipeline that never lets untrusted text choose an action (with
+its own audit step bypassed) leaked a planted fake secret in none of 239 runs, where an
+undefended weak local model leaked in 11%.
+
+![Left: detection rate against false-positive rate for six detectors on v1. Right: attack success of an undefended agent versus the isolated pipeline in three end-to-end settings.](assets/results.svg)
+
+*The figure is generated from the committed result rows by `python -m zhipi.figure` and
+checked by `python -m zhipi.verify`. Whiskers are 95% Wilson intervals; samples and runs are
+treated as independent, so they are narrower than the true uncertainty.*
+
 | question | finding (v1 / v2 data; 95% intervals in the reports) |
 |---|---|
 | Do detectors work on Chinese indirect injection? | A strong LLM judge: 97% detection, 2% false positives. A small multilingual classifier: 80% / 13%. A community classifier flagged **everything**; an English-only one flagged **55%** of benign text. |
@@ -78,8 +94,10 @@ src/zhipi/
   run_e2e.py      run both architectures against injection-blast-radius
   report_e2e.py   end-to-end rows -> tables
   release.py      pack result rows, dataset manifest, dataset release folder
-  verify.py       reproduce the released tables from the committed rows
+  verify.py       reproduce the released tables and figure from the committed rows
+  figure.py       the results figure (assets/results.svg), stdlib-only SVG
 data/seed/        hand-written intents and hard-negative benign text
+assets/           the README figure
 results/          the tables; results/rows/ holds the per-sample rows behind them
 release/          dataset card template, checksum manifest
 paper/            the technical report
@@ -172,6 +190,5 @@ use and how to report a problem: [SECURITY.md](SECURITY.md).
 ## Honest limitations (so far)
 
 Synthetic template data; 19 intents (one `judge_targeted`, two `spoofed_structure`); a
-53-sample benign set; single annotator; v1 is only *hypothesised* to be harder than v0
-until detectors are run on it; novelty checked at abstract level only. Each is tracked in the data card and
-roadmap.
+53-sample benign set; single annotator; novelty checked at abstract level only. Each is
+tracked in the data card and roadmap.

@@ -62,4 +62,4 @@ def test_the_released_results_reproduce_offline() -> None:
     results = verify.run()
     failed = [(name, detail) for name, ok, detail in results if not ok]
     assert not failed, failed
-    assert len(results) == len(build.VERSIONS) + len(verify.JOBS)
+    assert len(results) == len(build.VERSIONS) + len(verify.JOBS) + 1  # + the figure

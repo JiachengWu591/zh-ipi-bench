@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- README: a results figure (`assets/results.svg`, generated from the committed rows and
+  checked by `python -m zhipi.verify`), a short summary, and a Simplified Chinese version
+  (`README.zh-CN.md`) with a language switch.
+
 ## 0.1.0 (2026-10-24)
 
 First release: a benchmark, an evaluation harness, results, and the means to reproduce
