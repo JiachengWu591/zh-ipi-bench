@@ -9,7 +9,9 @@
 > **Status: v0.1, a research artifact.** One author, template-generated data, no second
 > annotator yet. Every number below is reproduced offline from committed result rows by
 > `python -m zhipi.verify`; the [technical report](paper/REPORT.md) says what each result
-> does and does not show. Dataset card: [release/DATASET_CARD.md](release/DATASET_CARD.md).
+> does and does not show. Data on Hugging Face:
+> [JiachengWu591/zh-ipi-bench](https://huggingface.co/datasets/JiachengWu591/zh-ipi-bench)
+> (configs `v0`, `v1`, `v2`; card source: [release/DATASET_CARD.md](release/DATASET_CARD.md)).
 
 ## Why this exists
 

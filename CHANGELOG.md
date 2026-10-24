@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased until tagged)
+## 0.1.0 (2026-10-24)
 
 First release: a benchmark, an evaluation harness, results, and the means to reproduce
 them. Everything below is described, with limits, in `paper/REPORT.md`.
