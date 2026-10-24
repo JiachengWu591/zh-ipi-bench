@@ -96,6 +96,7 @@ src/zhipi/
   release.py      pack result rows, dataset manifest, dataset release folder
   verify.py       reproduce the released tables and figure from the committed rows
   figure.py       the results figure (assets/results.svg), stdlib-only SVG
+  annotate.py     blind second-annotator kit: offline page, answer key, agreement scoring
 data/seed/        hand-written intents and hard-negative benign text
 assets/           the README figure
 results/          the tables; results/rows/ holds the per-sample rows behind them

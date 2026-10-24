@@ -87,6 +87,7 @@ src/zhipi/
   release.py      打包结果行、数据集清单、数据集发布目录
   verify.py       从已提交的结果行复现已发布的表格和图
   figure.py       结果图（assets/results.svg），纯标准库生成 SVG
+  annotate.py     盲标注的第二标注者工具包：离线页面、答案密钥、一致性评分
 data/seed/        手写的意图和难例良性文本
 assets/           README 配图
 results/          表格；results/rows/ 保存其背后的逐样本结果行

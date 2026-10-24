@@ -5,6 +5,10 @@
 - README: a results figure (`assets/results.svg`, generated from the committed rows and
   checked by `python -m zhipi.verify`), a short summary, and a Simplified Chinese version
   (`README.zh-CN.md`) with a language switch.
+- Second-annotator kit: `python -m zhipi.annotate` builds a blind offline annotation page
+  (label judgement plus translation ratings) and an answer key, and scores the returned
+  answers (agreement with a Wilson interval, Cohen's kappa with a bootstrap interval, by tier
+  and stratum). Protocol: `docs/ANNOTATION_GUIDE.md`. No annotation has been collected yet.
 
 ## 0.1.0 (2026-10-24)
 

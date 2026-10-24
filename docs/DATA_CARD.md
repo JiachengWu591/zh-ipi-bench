@@ -79,7 +79,8 @@ injection *wording*, not working exploit chains.
 - Benign set is 53 samples across 11 strata, so most per-stratum false-positive
   intervals are wide and must be reported as such.
 - Intents and the English parallel were written by one author; no second
-  annotator yet. Agreement (Cohen's κ) is still to be measured.
+  annotator yet. Agreement (Cohen's κ) is still to be measured; the protocol and tooling
+  are in `docs/ANNOTATION_GUIDE.md`, but no annotation has been collected.
 - Whether v1 is harder than v0 is an empirical question. Measured on one detector
   (the DeepSeek judge): yes, slightly (97% vs 100% detection), and only through two
   `implicit` intents. The tier labels are the author's judgement of difficulty, not a

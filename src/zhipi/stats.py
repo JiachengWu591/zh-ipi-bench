@@ -63,6 +63,52 @@ def auroc_bootstrap_ci(
     return draws[int(alpha / 2 * resamples)], draws[int((1 - alpha / 2) * resamples) - 1]
 
 
+def cohen_kappa(first: list[str], second: list[str]) -> float | None:
+    """Cohen's kappa for two raters over the same items (any number of categories).
+
+    None when it is undefined: no items, or both raters used one single category so chance
+    agreement is already 1. Kappa depends on how common each category is, so it is only
+    comparable between packets with similar label mixes; report raw agreement beside it.
+    """
+    if len(first) != len(second):
+        raise ValueError("raters must label the same items")
+    n = len(first)
+    if n == 0:
+        return None
+    observed = sum(a == b for a, b in zip(first, second, strict=True)) / n
+    expected = sum(
+        (first.count(c) / n) * (second.count(c) / n) for c in set(first) | set(second)
+    )
+    if expected >= 1.0:
+        return None
+    return (observed - expected) / (1 - expected)
+
+
+def kappa_bootstrap_ci(
+    first: list[str],
+    second: list[str],
+    *,
+    resamples: int = 1000,
+    seed: int = 0,
+    alpha: float = 0.05,
+) -> tuple[float, float] | None:
+    """Percentile bootstrap interval for kappa (fixed seed). Resamples items, so it ignores
+    that items drawn from one intent are correlated: a lower bound on the uncertainty.
+    Resamples where kappa is undefined are dropped; None if too few remain."""
+    rng = random.Random(seed)
+    n = len(first)
+    draws: list[float] = []
+    for _ in range(resamples):
+        idx = [rng.randrange(n) for _ in range(n)]
+        value = cohen_kappa([first[i] for i in idx], [second[i] for i in idx])
+        if value is not None:
+            draws.append(value)
+    if len(draws) < resamples // 2:
+        return None
+    draws.sort()
+    return draws[int(alpha / 2 * len(draws))], draws[int((1 - alpha / 2) * len(draws)) - 1]
+
+
 def mcnemar_exact(lost: int, gained: int) -> float:
     """Two-sided exact McNemar p-value for paired binary outcomes.
 
