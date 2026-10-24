@@ -14,9 +14,12 @@ if changes were made.
 The source code (`src/`, `tests/`, tooling) is licensed separately under the MIT
 License; see `LICENSE`.
 
-> The full CC BY 4.0 legal text will be bundled with the data when it is published as
-> a standalone release (Phase 5 in `docs/ROADMAP.md`). Until then the links above are
-> the authoritative text.
+The full CC BY 4.0 legal text, downloaded unmodified from the Creative Commons URL
+above (plain-text version, SHA-256 `9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411`
+before line endings were normalised to LF), is in
+[`release/CC-BY-4.0.txt`](release/CC-BY-4.0.txt) and is copied into the dataset upload
+folder by `python -m zhipi.release dist`. If it ever disagrees with the link, the link
+is authoritative.
 
 ## Intended use
 

@@ -42,8 +42,18 @@ def test_the_dataset_card_has_no_unfilled_placeholders(tmp_path) -> None:  # typ
 def test_build_dist_writes_the_files_a_dataset_upload_needs(tmp_path) -> None:  # type: ignore[no-untyped-def]
     out = release.build_dist(tmp_path / "dist")
     for name in ("README.md", "MANIFEST.json", "data/v0.jsonl", "data/v1.jsonl", "data/v2.jsonl",
-                 "seed/intents.jsonl", "seed/benign.jsonl"):
+                 "seed/intents.jsonl", "seed/benign.jsonl", "LICENSE.md", "CC-BY-4.0.txt"):
         assert (out / name).exists(), name
+
+
+def test_the_bundled_license_is_the_plain_cc_by_text() -> None:
+    text = (release.ROOT / "release" / "CC-BY-4.0.txt").read_text(encoding="utf-8")
+    assert text.startswith("Attribution 4.0 International")
+    assert "<html" not in text.lower()
+    for heading in ("Section 1 -- Definitions", "Section 3 -- License Conditions",
+                    "Section 5 -- Disclaimer of Warranties"):
+        assert heading in text
+    assert 15_000 < len(text) < 25_000  # a truncated or padded download would fall outside
 
 
 def test_the_released_results_reproduce_offline() -> None:
