@@ -1,7 +1,9 @@
-# Data card (draft — not released)
+# Data card
 
-Two builds from the same seed files. Both are generated locally by
-`python -m zhipi.build --version v0|v1` and are not published yet.
+Versions built from the same seed files by `python -m zhipi.build --version v0|v1|v2`.
+Released as v0.1.0 on Hugging Face (`JiachengWu591/zh-ipi-bench`, configs `v0`, `v1`, `v2`);
+checksums in `release/MANIFEST.json`. The Hugging Face card is `release/DATASET_CARD.md`;
+this file is the fuller working card. The table below compares v0 and v1; v2 follows it.
 
 | | v0 | v1 |
 |---|---|---|
@@ -12,7 +14,7 @@ Two builds from the same seed files. Both are generated locally by
 | Benign | 10 bare hosts + 6 hard negatives | 10 bare hosts + 10 long (buried-style) hosts + 33 hard negatives |
 | Languages | Simplified Chinese; English parallel control | same |
 | Construction | Template-based, hand-written seeds | same |
-| Frozen? | **Yes.** `tests/test_build.py` pins a fingerprint of all (id, text) pairs | No; may change before release |
+| Frozen? | **Yes.** `tests/test_build.py` pins a fingerprint of all (id, text) pairs **Yes** since v0.1.0 (pinned in `release/MANIFEST.json`, checked by `python -m zhipi.verify`) |
 | License | Code: MIT (`LICENSE`). Data: CC BY 4.0 (`DATA_LICENSE.md`) | same |
 
 ## v2 (added after the first end-to-end run)

@@ -100,7 +100,7 @@ tests/            离线测试（不需要模型、网络或密钥）
 数据：**v0**（226 条，已冻结；第一阶段的测量对象）和 **v1**（803 条：19 个意图、四个层级、
 “埋在长文档里”的位置变体、11 个类别共 53 条良性样本），以及 **v2**（1,288 条：v1 加上
 从 injection-blast-radius 语料移植的 12 种攻击，以及含 HTML 注释的良性 issue；v0 和 v1
-由测试固定）。数据卡草稿：[docs/DATA_CARD.md](docs/DATA_CARD.md)。
+由测试固定）。完整数据卡：[docs/DATA_CARD.md](docs/DATA_CARD.md)。
 
 ## 快速开始
 

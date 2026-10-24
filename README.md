@@ -110,7 +110,7 @@ Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (803
 19 intents in four tiers, a "buried in a long document" placement, 53 benign samples
 in 11 strata), plus **v2** (1,288 samples: v1 plus twelve attacks ported from
 injection-blast-radius's corpus, and benign issues containing HTML comments; v0 and v1
-are pinned by tests). Draft [data card](docs/DATA_CARD.md).
+are pinned by tests). Working [data card](docs/DATA_CARD.md).
 
 ## Quickstart
 

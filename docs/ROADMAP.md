@@ -37,7 +37,8 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
   more hard negatives.
 
   **Missing:** Prompt Guard 2 (the Hugging Face access request was rejected) and
-  the `ibr` audit (needs `IBR_REPO`; it makes billed calls and was not run).
+  the `ibr` audit as a detector on v0 (it makes billed calls and was not run there; it was
+  exercised end to end in Phase 4 instead).
 - **Phase 2** — **step 1 done and measured** (`results/v1.md`, 803 samples, all runs
   at one clean commit, same dataset hash). v1 has 19 intents in four tiers
   (`explicit` / `implicit` / `spoofed_structure` / `judge_targeted`), a `buried`
@@ -193,7 +194,8 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
     the model or on Chinese. It does not show the boundary is unbeatable (the executor can
     only post four static templates, so zero leaks is by construction), and it does not
     show a language effect.
-- **Phase 5: release, prepared (not yet published).** Done in the repository:
+- **Phase 5: release, done (v0.1.0, 2026-10-24).** Published: the `v0.1.0` tag and GitHub
+  release, and the Hugging Face dataset with configs `v0`, `v1`, `v2`. In the repository:
   - `results/rows/` (6.1 MB of per-sample rows, scanned for keys, emails and local paths)
     and `release/MANIFEST.json` (checksums of v0/v1/v2);
   - `python -m zhipi.verify`, which rebuilds the data and regenerates every table in
@@ -202,14 +204,19 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
   - the Hugging Face dataset card (`release/DATASET_CARD.md`) and `python -m zhipi.release
     dist`, which builds the upload folder;
   - README front page, `CHANGELOG.md`, version 0.1.0, CITATION.
-  Needs the owner (outward-facing or account-bound): creating the Hugging Face dataset and
-  uploading it, bundling the CC BY 4.0 legal text (a download), tagging `v0.1.0` and
-  creating a GitHub release, and converting the report to LaTeX/PDF if it goes to arXiv.
+  Not done: converting the report to LaTeX/PDF, which is only needed if it goes to arXiv.
+- **Second annotator.** A human second annotator was dropped by the owner (no suitable
+  person). Instead a blind LLM annotator labelled a 103-text packet: 102 of 103 agreed with
+  the author (kappa 0.98) and 4 of 31 translations were rated slightly off
+  (`results/annotation.md`). It is an upper bound, not a human agreement; human agreement
+  stays unmeasured. Tooling and protocol: `docs/ANNOTATION_GUIDE.md`.
+- **README figure and Chinese README** (`assets/results.svg`, `README.zh-CN.md`); the figure
+  is regenerated and checked by `python -m zhipi.verify`.
 
-  Not started: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
-  `char_decomp`), real-text benign samples, second-annotator agreement, and growing to
-  ~1,500 samples. Per-tier counts are very uneven (`judge_targeted` is one intent), so
-  the tier rows say little beyond the specific wordings.
+  Still open from Phase 2: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
+  `char_decomp`), real-text benign samples, and growing to ~1,500 samples. Per-tier counts
+  are very uneven (`judge_targeted` is one intent), so the tier rows say little beyond the
+  specific wordings.
 
 ## Compute plan
 
