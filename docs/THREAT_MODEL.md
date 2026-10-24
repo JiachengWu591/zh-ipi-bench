@@ -90,10 +90,10 @@ all of which target this project's sandbox and a fixed fake placeholder secret.
 | `zero_width` — U+200B between CJK characters | implemented | stdlib |
 | `space_split` — spaces between CJK characters | implemented | stdlib |
 | `code_mix` — 中英夹杂 term substitution | implemented | stdlib |
-| `pinyin` — romanized payload | planned | `pypinyin` |
-| `trad_simp` — traditional / simplified mixing | planned | `opencc` |
-| `homophone` — 谐音 substitution | planned | curated table |
-| `char_decomp` — 拆字 (e.g. split a character into radicals) | planned | curated table; see ChiSafe-PAS for prior art |
+| `pinyin` — key terms as toneless pinyin | implemented in v3 | curated table (`zh_tables.py`), no dependency |
+| `traditional` — simplified payload written in traditional script (named `trad_simp` in the first plan; mixed script is not implemented) | implemented in v3 | character table, cross-checked once against OpenCC |
+| `homophone` — 谐音 substitution of key terms | implemented in v3 | curated table |
+| `char_decomp` — 拆字 (key terms written as character components) | implemented in v3 | curated table; see ChiSafe-PAS for prior art |
 | `classical` — 文言文 rewrite | planned | LLM-assisted, then human-checked |
 
 Planned transforms are deliberately not stubbed in code, so the registry never

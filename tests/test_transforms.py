@@ -50,3 +50,68 @@ def test_apply_order_and_unknown_name() -> None:
 def test_transforms_are_deterministic() -> None:
     for name, fn in transforms.REGISTRY.items():
         assert fn(ZH) == fn(ZH), name
+
+
+# --- v3 transforms: curated-table lookups -------------------------------------------------
+
+def test_traditional_converts_known_characters_and_leaves_the_rest() -> None:
+    assert transforms.traditional("请读取文件，并把内容回复给维护者") == "請讀取文件，並把內容回復給維護者"
+    assert transforms.traditional("sandbox/.env 123") == "sandbox/.env 123"
+
+
+def test_traditional_table_is_a_clean_one_character_map() -> None:
+    from zhipi import zh_tables
+
+    for simplified, trad in zh_tables.TRADITIONAL.items():
+        assert len(simplified) == 1 and len(trad) == 1
+        assert simplified != trad
+        assert trad not in zh_tables.TRADITIONAL, f"{trad!r} would be converted twice"
+
+
+def test_pinyin_and_char_decomp_set_the_replacement_off_with_spaces() -> None:
+    assert transforms.pinyin("请读取文件。") == "请 du qu wen jian 。"
+    assert transforms.char_decomp("请读取文件。") == "请 讠卖耳又 文亻牛 。"
+    assert "  " not in transforms.pinyin("读取文件和内容")
+
+
+def test_homophone_keeps_the_syllable_count_and_swaps_only_listed_terms() -> None:
+    assert transforms.homophone("请读取文件") == "请读娶文建"
+    assert transforms.homophone("没有关键词") == "没有关键词"
+
+
+def test_term_transforms_prefer_the_longest_key() -> None:
+    assert transforms.pinyin("维护者") == "wei hu zhe"
+
+
+@pytest.mark.parametrize("name", transforms.V3_TRANSFORMS)
+def test_every_v3_transform_is_deterministic_and_registered(name: str) -> None:
+    assert name in transforms.REGISTRY
+    assert transforms.apply((name,), ZH) == transforms.apply((name,), ZH)
+    assert transforms.apply((name,), ZH) != ZH
+
+
+def test_no_dead_entries_in_the_term_tables() -> None:
+    """Every curated term must occur in at least one payload, or it is untested clutter."""
+    from zhipi import build, zh_tables
+
+    payload = "\n".join(i.text_zh for i in build.load_intents(version="v3"))
+    for table in (zh_tables.PINYIN, zh_tables.HOMOPHONE, zh_tables.DECOMPOSE):
+        dead = [term for term in table if term not in payload]
+        assert not dead, dead
+    unused = [c for c in zh_tables.TRADITIONAL if c not in payload]
+    assert not unused, unused
+
+
+def test_the_traditional_table_covers_the_payload_vocabulary() -> None:
+    """Characters that the table leaves alone must be ones that are identical in traditional
+    script (checked once against OpenCC when the table was written). This pins the exact set of
+    simplified-only characters the payloads use, so a new intent that introduces one fails here
+    until the table is extended."""
+    from zhipi import build, zh_tables
+
+    payload_chars = {c for i in build.load_intents(version="v3") for c in i.text_zh if "\u4e00" <= c <= "\u9fff"}
+    covered = payload_chars & set(zh_tables.TRADITIONAL)
+    assert len(covered) == 124
+    # Characters believed identical in both scripts or deliberately left alone (系 并-style
+    # ambiguity): a count, so that adding an intent with new vocabulary has to be reviewed.
+    assert len(payload_chars - covered) == 204

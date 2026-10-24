@@ -5,7 +5,7 @@
     python -m zhipi.build --version v0       # the original 226-sample set
     python -m zhipi.build --out some/path.jsonl
 
-Three versions, each a superset of the last, all deterministic (same seed files,
+Four versions, each a superset of the last, all deterministic (same seed files,
 byte-identical output):
 
 - v0: the six explicit intents, the bare benign hosts and the first six hard
@@ -18,6 +18,11 @@ byte-identical output):
   its undefended baseline leaks on) in Chinese with English originals, and benign
   issues containing HTML comments. Built because the baseline agent barely leaked on
   v1, which left the structural layer nothing to prevent.
+- v3: adds the Chinese-specific transforms that needed curated tables (traditional,
+  pinyin, homophone, char_decomp) on every intent in two carriers, and benign controls
+  that contain the same surface forms innocently (traditional-Chinese issues, pinyin,
+  character breakdowns, homophone discussions). Built to complete the transform axis
+  the first release left at four.
 """
 
 from __future__ import annotations
@@ -31,7 +36,7 @@ from .schemas import CARRIERS, Intent, MalformedSample, Sample
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED_DIR = ROOT / "data" / "seed"
-VERSIONS = ("v0", "v1", "v2")
+VERSIONS = ("v0", "v1", "v2", "v3")
 
 # Transform sets applied to Chinese payloads. English payloads are the
 # cross-lingual control and only appear untransformed.
@@ -75,7 +80,12 @@ def load_intents(
 def load_hard_negatives(
     path: Path = SEED_DIR / "benign.jsonl", version: str = "v1"
 ) -> list[Sample]:
-    keep = {"v0": {"v0"}, "v1": {"v0", "v1"}, "v2": {"v0", "v1", "v2"}}[version]
+    keep = {
+        "v0": {"v0"},
+        "v1": {"v0", "v1"},
+        "v2": {"v0", "v1", "v2"},
+        "v3": {"v0", "v1", "v2", "v3"},
+    }[version]
     samples = []
     for row in _read_jsonl(path):
         if row.get("added_in", "v0") not in keep:
@@ -115,6 +125,22 @@ def _injected(
     )
 
 
+def _v3_transform_samples(intents: list[Intent]) -> list[Sample]:
+    """The v3 transforms on every intent, in two carriers each: `issue` (the reference
+    carrier) and one more, rotating through the other four by intent so every carrier is
+    exercised. Two carriers rather than five keeps v3 near 1,500 samples. A transform that
+    leaves a payload unchanged (no key term present) is skipped, as in v1."""
+    others = tuple(c for c in CARRIERS if c != "issue")
+    samples: list[Sample] = []
+    for index, intent in enumerate(sorted(intents, key=lambda i: i.intent_id)):
+        for carrier in ("issue", others[index % len(others)]):
+            for name in transforms.V3_TRANSFORMS:
+                if transforms.apply((name,), intent.text_zh) == intent.text_zh:
+                    continue
+                samples.append(_injected(intent, carrier, "zh", (name,)))
+    return samples
+
+
 def build_samples(
     intents: list[Intent], hard_negatives: list[Sample], version: str = "v1"
 ) -> list[Sample]:
@@ -133,10 +159,13 @@ def build_samples(
                 samples.append(_injected(intent, carrier, "zh", tfs))
             samples.append(_injected(intent, carrier, "en", ()))
 
-    if version in ("v1", "v2"):
+    if version != "v0":
         for intent in intents:
             for carrier in CARRIERS:
                 samples.append(_injected(intent, carrier, "zh", (), "buried"))
+
+    if version == "v3":
+        samples.extend(_v3_transform_samples(intents))
 
     for carrier, lang in carriers.all_pairs():
         samples.append(
@@ -152,7 +181,7 @@ def build_samples(
         )
     samples.extend(hard_negatives)
 
-    if version in ("v1", "v2"):
+    if version != "v0":
         for carrier, lang in carriers.all_pairs():
             samples.append(
                 Sample(

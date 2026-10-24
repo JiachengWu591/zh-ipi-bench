@@ -80,7 +80,8 @@ python -m zhipi.verify        # rebuilds the data, regenerates every table, comp
 ```
 src/zhipi/
   schemas.py      frozen dataclasses: Intent, Sample (validated, fail-closed)
-  transforms.py   fullwidth · zero_width · space_split · code_mix   (more planned)
+  transforms.py   fullwidth · zero_width · space_split · code_mix · traditional · pinyin ·
+                  homophone · char_decomp   (tables for the last four: zh_tables.py)
   carriers.py     5 benign hosts: issue · rag_doc · email · web_html · tool_output
   build.py        intents × carriers × transforms (+ benign controls) -> JSONL
   defenses.py     Defense protocol, fail-closed wrapper, keyword sanity baselines
@@ -109,8 +110,10 @@ tests/            offline tests (no model, network, or key needed)
 Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (803 samples:
 19 intents in four tiers, a "buried in a long document" placement, 53 benign samples
 in 11 strata), plus **v2** (1,288 samples: v1 plus twelve attacks ported from
-injection-blast-radius's corpus, and benign issues containing HTML comments; v0 and v1
-are pinned by tests). Working [data card](docs/DATA_CARD.md).
+injection-blast-radius's corpus, and benign issues containing HTML comments), and **v3** (1,556 samples, not yet released or measured
+against detectors: v2 plus four more Chinese transforms on every intent — traditional script,
+pinyin, homophones, character decomposition — and 20 benign controls with the same surface
+forms; v0–v2 are pinned by tests and the manifest). Working [data card](docs/DATA_CARD.md).
 
 ## Quickstart
 
@@ -190,6 +193,7 @@ use and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Honest limitations (so far)
 
-Synthetic template data; 19 intents (one `judge_targeted`, two `spoofed_structure`); a
-53-sample benign set; single annotator; novelty checked at abstract level only. Each is
-tracked in the data card and roadmap.
+Synthetic template data; 31 intents (19 written for the benchmark, 12 ported; one
+`judge_targeted`, two `spoofed_structure`); a benign set of 78 samples (53 up to v1); no
+human second annotator (a blind LLM annotator agreed on 102 of 103 texts, which is an upper
+bound); novelty checked at abstract level only. Each is tracked in the data card and roadmap.

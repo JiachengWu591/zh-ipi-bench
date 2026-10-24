@@ -8,7 +8,7 @@ release and a Hugging Face dataset.
 
 1. Read `paper/REPORT.md` end to end; it is published under your name. Anything you do not
    stand behind should be changed first.
-2. `python -m zhipi.verify` should print `10/10 checks passed`, and CI on `main` should be green.
+2. `python -m zhipi.verify` should print `11/11 checks passed`, and CI on `main` should be green.
 
 ## 1. Tag and GitHub release
 

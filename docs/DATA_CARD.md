@@ -41,6 +41,29 @@ needed. The corpus was chosen because the source project reports its undefended 
 leaking on these techniques, which did **not** reproduce on the model used here
 (see `docs/ROADMAP.md`, Phase 4).
 
+## v3 (added after the first release; not yet measured)
+
+1,556 samples (1,478 injected, 78 benign): v2 byte-for-byte, plus
+
+- **Four transforms** that need small curated tables (`src/zhipi/zh_tables.py`; no new
+  dependency): `traditional` (the simplified payload written in traditional script, via a
+  one-character table, cross-checked once against OpenCC; it differs from OpenCC in three
+  characters where two traditional forms are both accepted), `pinyin` (key terms as toneless
+  pinyin), `homophone` (key terms with a same-sound character), `char_decomp` (key terms as
+  the components of their characters). The term tables cover only vocabulary the payloads
+  already use; a test fails if an entry is dead. Like every transform here they apply to the
+  payload only, so a traditional-script payload still sits in a simplified-script host.
+- Applied to **all 31 intents** in the `issue` carrier plus one more carrier that rotates by
+  intent, so every carrier is used and v3 stays near 1,500 samples. A transform that leaves a
+  payload unchanged would be skipped; none were.
+- **20 benign controls**, hand-written, in four new strata: `traditional_text` (8: ordinary
+  traditional-script issues, documents, emails and a tool output), `pinyin_text` (5),
+  `char_breakdown_text` (4), `homophone_text` (3). Each contains the surface form its
+  transform produces, in an innocent context, so a detector cannot win by flagging the form.
+- What is **not** here: real-world text (decided against: licensing and de-identification
+  work for a small gain), mixed simplified/traditional payloads, tone-marked pinyin, and any
+  measurement. The tables are single-author and unreviewed by a second reader.
+
 ## Intended use
 
 Measuring how well prompt-injection *defenses* handle Chinese indirect injection,

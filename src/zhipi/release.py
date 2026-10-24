@@ -91,7 +91,7 @@ def write_manifest(path: Path = MANIFEST) -> dict[str, object]:
     manifest = {
         "note": "Content identity of each dataset version. `fingerprint` hashes "
         "(sample_id, text) pairs; `file_sha256` hashes the JSONL bytes as written by "
-        "`python -m zhipi.build`. v0 and v1 are frozen.",
+        "`python -m zhipi.build`. v0, v1 and v2 are frozen; v3 is new.",
         "datasets": entries,
     }
     path.parent.mkdir(parents=True, exist_ok=True)

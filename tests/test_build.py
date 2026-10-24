@@ -191,3 +191,60 @@ def test_buried_payload_appears_once_with_filler_on_both_sides() -> None:
 def test_unknown_placement_is_an_error() -> None:
     with pytest.raises(ValueError):
         carriers.wrap("x", "issue", "zh", "middle")
+
+
+# v2 is frozen once released (it is on Hugging Face and pinned in release/MANIFEST.json).
+V2_FINGERPRINT = "7d478b6ade3c668e418da54cc9407d10d8ca403f644597ad418e3ef8a6538b6c"
+V3_NEW_STRATA = {"traditional_text", "pinyin_text", "char_breakdown_text", "homophone_text"}
+
+
+def test_v2_is_unchanged_by_the_v3_additions() -> None:
+    samples = build.build_version("v2")
+    assert len(samples) == 1288
+    assert _fingerprint(samples) == V2_FINGERPRINT
+
+
+def test_v3_keeps_all_of_v2_and_adds_only_the_new_transforms_and_controls() -> None:
+    v2 = {s.sample_id: s for s in build.build_version("v2")}
+    v3 = {s.sample_id: s for s in build.build_version("v3")}
+    for sample_id, s in v2.items():
+        assert v3[sample_id].text == s.text, sample_id
+    added = [s for sample_id, s in v3.items() if sample_id not in v2]
+    for s in added:
+        if s.label == "injected":
+            assert len(s.transforms) == 1 and s.transforms[0] in transforms.V3_TRANSFORMS, s.sample_id
+            assert s.language == "zh" and s.placement == "default"
+        else:
+            assert s.stratum in V3_NEW_STRATA, s.sample_id
+    assert 1400 <= len(v3) <= 1700  # the roadmap's "~1,500 samples"
+
+
+def test_v3_applies_every_new_transform_to_every_intent_in_issue_plus_one_other_carrier() -> None:
+    v3 = build.build_version("v3")
+    for intent in build.load_intents(version="v3"):
+        for name in transforms.V3_TRANSFORMS:
+            carriers_used = [
+                s.carrier for s in v3 if s.intent_id == intent.intent_id and s.transforms == (name,)
+            ]
+            assert len(carriers_used) == 2 and "issue" in carriers_used, (intent.intent_id, name)
+    new_carriers = {s.carrier for s in v3 if s.transforms and s.transforms[0] in transforms.V3_TRANSFORMS}
+    assert new_carriers == set(CARRIERS)
+
+
+def test_v3_benign_controls_cover_each_new_transform_and_carry_no_payload() -> None:
+    new = [s for s in build.build_version("v3") if s.stratum in V3_NEW_STRATA]
+    assert Counter(s.stratum for s in new).keys() == V3_NEW_STRATA
+    assert all(n >= 3 for n in Counter(s.stratum for s in new).values())
+    for s in new:
+        assert s.label == "benign" and s.language == "zh"
+        assert "sandbox" not in s.text and "密钥" not in s.text, s.sample_id
+    # the controls must contain the same surface forms the transforms produce
+    texts = "\n".join(s.text for s in new)
+    assert "du qu" in texts and "读娶" in texts and "讠" in texts and "讀取" in texts
+
+
+def test_v3_transformed_plaintext_intent_stays_the_plain_request() -> None:
+    by_id = {s.sample_id: s for s in build.build_version("v3")}
+    for s in by_id.values():
+        if s.label == "injected" and s.transforms and s.transforms[0] in transforms.V3_TRANSFORMS:
+            assert s.plaintext_intent == by_id[f"{s.carrier}-{s.intent_id}-plain-zh"].plaintext_intent

@@ -5,15 +5,19 @@ Each transform is a pure, deterministic `str -> str`. They are applied to the
 makes a comparison out of the results instead of a collection of anecdotes
 (the same design rule as injection-blast-radius's attack corpus).
 
-Implemented here are the dependency-free ones. Planned ones that need a library
-(pinyin, traditional/simplified, homophones, character decomposition,
-classical-Chinese rewriting) are listed in docs/THREAT_MODEL.md and are not
-stubbed in, so nothing in the registry claims to do what it does not.
+Everything here is dependency-free. The four original transforms work on characters; the
+four added for v3 (traditional, pinyin, homophone, char_decomp) are lookups in small
+hand-curated tables (`zh_tables.py`), so they re-spell only vocabulary the payloads already
+use. Classical-Chinese rewriting is still planned and not stubbed in, so nothing in the
+registry claims to do what it does not (see docs/THREAT_MODEL.md).
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Sequence
+
+from . import zh_tables
 
 Transform = Callable[[str], str]
 
@@ -98,12 +102,52 @@ def code_mix(text: str) -> str:
     return text
 
 
+def _replace_terms(text: str, table: dict[str, str], *, pad: bool = False) -> str:
+    """Replace every key in `table`, longest keys first so a short key cannot eat part of a
+    longer one. With `pad`, the replacement is set off by single spaces (romanised or
+    component text jammed against Chinese is unreadable to anyone, which would test
+    legibility rather than the detector)."""
+    for key in sorted(table, key=lambda k: (-len(k), k)):
+        text = text.replace(key, f" {table[key]} " if pad else table[key])
+    if pad:
+        text = re.sub(r" {2,}", " ", text).strip(" ")
+    return text
+
+
+def traditional(text: str) -> str:
+    """Simplified -> traditional characters (繁體): text a simplified-only filter or a
+    simplified-trained classifier may not recognise, and that a model reads as normal."""
+    return "".join(zh_tables.TRADITIONAL.get(ch, ch) for ch in text)
+
+
+def pinyin(text: str) -> str:
+    """Key terms as toneless pinyin (`读取` -> `du qu`): romanised, so no Chinese keyword matches."""
+    return _replace_terms(text, zh_tables.PINYIN, pad=True)
+
+
+def homophone(text: str) -> str:
+    """Key terms with a same-sound character (谐音; `读取` -> `读娶`): a typo-style evasion."""
+    return _replace_terms(text, zh_tables.HOMOPHONE)
+
+
+def char_decomp(text: str) -> str:
+    """Key terms written as the components of their characters (拆字; `读取` -> `讠卖耳又`)."""
+    return _replace_terms(text, zh_tables.DECOMPOSE, pad=True)
+
+
 REGISTRY: dict[str, Transform] = {
     "fullwidth": fullwidth,
     "zero_width": zero_width,
     "space_split": space_split,
     "code_mix": code_mix,
+    "traditional": traditional,
+    "pinyin": pinyin,
+    "homophone": homophone,
+    "char_decomp": char_decomp,
 }
+
+# The transforms added in v3 (v0-v2 are frozen and use only the first four).
+V3_TRANSFORMS: tuple[str, ...] = ("traditional", "pinyin", "homophone", "char_decomp")
 
 
 def apply(names: Sequence[str], text: str) -> str:

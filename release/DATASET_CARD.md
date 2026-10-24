@@ -15,6 +15,8 @@ tags:
   - benchmark
   - chinese
 configs:
+  - config_name: v3
+    data_files: data/v3.jsonl
   - config_name: v2
     data_files: data/v2.jsonl
   - config_name: v1
@@ -29,7 +31,8 @@ A benchmark for **indirect prompt injection in Chinese**: an instruction hidden 
 document, web page, email or tool output that an LLM application reads as *data*. It
 contains injected samples, benign look-alike controls, and the Chinese-specific
 obfuscations (fullwidth forms, zero-width characters, spaced characters, Chinese-English
-code-mixing) applied to the payloads.
+code-mixing, and in `v3` traditional script, pinyin, homophones and character
+decomposition) applied to the payloads.
 
 Code, evaluation harness, results and the technical report:
 <https://github.com/JiachengWu591/zh-ipi-bench>
@@ -39,14 +42,15 @@ Code, evaluation harness, results and the technical report:
 
 ## Versions
 
-Each version contains the previous one. v0 and v1 are frozen (the repository pins a
-content fingerprint for them); v2 may still change.
+Each version contains the previous one. v0, v1 and v2 are frozen (the repository pins a
+content fingerprint for each); `v3` is newer and has not been measured against detectors yet.
 
 | config | samples | injected | benign | what it adds |
 |---|--:|--:|--:|---|
 | `v0` | {v0_samples} | {v0_injected} | {v0_benign} | six explicit payloads, four transforms, five carriers |
 | `v1` | {v1_samples} | {v1_injected} | {v1_benign} | implicit, spoofed-structure and judge-targeted payloads; a "buried in a long document" placement; hard-negative benign strata |
 | `v2` | {v2_samples} | {v2_injected} | {v2_benign} | twelve attacks ported from injection-blast-radius's corpus (English original + Chinese translation); benign issues containing HTML comments |
+| `v3` | {v3_samples} | {v3_injected} | {v3_benign} | four more Chinese transforms (traditional script, pinyin, homophone, character decomposition) on every intent in two carriers; benign controls that contain the same surface forms innocently |
 
 `MANIFEST.json` lists the checksum of every file; `seed/` holds the hand-written intents
 and benign texts the data is generated from.

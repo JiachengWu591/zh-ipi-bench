@@ -213,10 +213,19 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
 - **README figure and Chinese README** (`assets/results.svg`, `README.zh-CN.md`); the figure
   is regenerated and checked by `python -m zhipi.verify`.
 
-  Still open from Phase 2: the planned transforms (`pinyin`, `trad_simp`, `homophone`,
-  `char_decomp`), real-text benign samples, and growing to ~1,500 samples. Per-tier counts
-  are very uneven (`judge_targeted` is one intent), so the tier rows say little beyond the
-  specific wordings.
+- **Phase 2, remainder: data v3 built (not yet measured).** The four planned transforms
+  (`pinyin`, `traditional` — the plan's `trad_simp`, without the mixed-script variant —,
+  `homophone`, `char_decomp`) are implemented from small curated tables, applied to all 31
+  intents in two carriers, with 20 matching benign controls: 1,556 samples, the "~1,500"
+  target. v0–v2 are unchanged (fingerprints pinned). Real-text benign samples were decided
+  against by the owner (hand-written controls instead). Human second-annotator agreement
+  was dropped (see above). What v3 does **not** yet show: nothing has been run on it, so
+  whether these transforms hurt any detector is open. Next, if wanted: run the three
+  detectors that worked on v3's new samples (the DeepSeek judge makes billed calls; about
+  250 new injected + 20 benign samples), compare against the plain twins with the existing
+  paired tests, and decide whether to cut a v0.2.0 release. Per-tier counts remain very
+  uneven (`judge_targeted` is one intent), so the tier rows say little beyond the specific
+  wordings.
 
 ## Compute plan
 

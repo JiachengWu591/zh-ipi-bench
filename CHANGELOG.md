@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Data v3** (1,556 samples: 1,478 injected, 78 benign; v0–v2 byte-identical and pinned).
+  Four new Chinese transforms backed by small curated tables (`zh_tables.py`, no new
+  dependency): `traditional` (simplified payload in traditional script; table cross-checked
+  once against OpenCC), `pinyin`, `homophone`, `char_decomp`. Applied to all 31 intents in the
+  `issue` carrier plus one rotating other carrier. Twenty hand-written benign controls that
+  contain the same surface forms innocently (traditional-script issues, pinyin, character
+  breakdowns, homophone discussions). Not yet measured against any detector and not yet
+  published to Hugging Face; the dataset card template already lists a `v3` config.
+- Real-text benign samples were considered and not done (license and de-identification work
+  for a small gain); the benign controls remain hand-written.
+
 - README: a results figure (`assets/results.svg`, generated from the committed rows and
   checked by `python -m zhipi.verify`), a short summary, and a Simplified Chinese version
   (`README.zh-CN.md`) with a language switch.

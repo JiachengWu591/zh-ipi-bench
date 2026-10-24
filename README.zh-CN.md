@@ -71,7 +71,8 @@ python -m zhipi.verify        # 重建数据、重新生成所有表格和图，
 ```
 src/zhipi/
   schemas.py      frozen dataclass：Intent、Sample（带校验，失败即拒绝）
-  transforms.py   fullwidth · zero_width · space_split · code_mix   （更多计划中）
+  transforms.py   fullwidth · zero_width · space_split · code_mix · traditional · pinyin ·
+                  homophone · char_decomp   （后四种的对照表：zh_tables.py）
   carriers.py     5 种良性载体：issue · rag_doc · email · web_html · tool_output
   build.py        意图 × 载体 × 变换（+ 良性对照）-> JSONL
   defenses.py     Defense 协议、失败即拒绝的包装、关键词基线
@@ -99,8 +100,8 @@ tests/            离线测试（不需要模型、网络或密钥）
 
 数据：**v0**（226 条，已冻结；第一阶段的测量对象）和 **v1**（803 条：19 个意图、四个层级、
 “埋在长文档里”的位置变体、11 个类别共 53 条良性样本），以及 **v2**（1,288 条：v1 加上
-从 injection-blast-radius 语料移植的 12 种攻击，以及含 HTML 注释的良性 issue；v0 和 v1
-由测试固定）。完整数据卡：[docs/DATA_CARD.md](docs/DATA_CARD.md)。
+从 injection-blast-radius 语料移植的 12 种攻击，以及含 HTML 注释的良性 issue），以及 **v3**（1,556 条，尚未发布，也尚未在检测器上测量：v2 加上对每个意图
+再施加四种中文变换——繁体、拼音、谐音、拆字——以及 20 条含同样表面形式的良性对照；v0–v2 由测试和清单固定）。完整数据卡：[docs/DATA_CARD.md](docs/DATA_CARD.md)。
 
 ## 快速开始
 
@@ -174,5 +175,7 @@ python -m zhipi.report_e2e --data data/generated/v2.jsonl --tag qwen25-7b
 
 ## 诚实的局限（目前）
 
-合成的模板数据；19 个意图（其中 1 个 `judge_targeted`、2 个 `spoofed_structure`）；良性集只有
-53 条；单一标注者；新颖性只在摘要层面核查过。每一项都记录在数据卡和路线图中。
+合成的模板数据；31 个意图（19 个为本基准编写、12 个移植；其中 1 个 `judge_targeted`、
+2 个 `spoofed_structure`）；良性集共 78 条（v1 及之前为 53 条）；没有人类第二标注者（一个盲标
+LLM 标注者在 103 条文本上一致 102 条，这只是上限）；新颖性只在摘要层面核查过。每一项都记录在
+数据卡和路线图中。
