@@ -9,7 +9,8 @@ Four checks:
    `release/MANIFEST.json` (so v0 and v1 really are frozen);
 2. every table in `results/*.md` is regenerated from `results/rows/` and compared
    byte for byte with the committed file;
-3. the README figure `assets/results.svg` is regenerated the same way;
+3. the README figure `assets/results.svg` and the second-annotator report
+   `results/annotation.md` (from the committed answers) are regenerated the same way;
 4. nothing here calls a model, so a pass means the numbers in the report are a pure
    function of the committed rows and the committed code.
 
@@ -27,7 +28,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import figure
+from . import annotate, figure
 from .e2e import collapse, load_rows
 from .release import MANIFEST, ROWS_DIR, dataset_entries
 from .report import build_report, load_raw
@@ -105,7 +106,26 @@ def run(update: bool = False) -> list[tuple[str, bool, str]]:
             else:
                 results.append((f"report {job.report}", False, "differs from the committed file"))
     results.append(_check_figure(update))
+    results.append(_check_annotation(update))
     return results
+
+
+def _check_annotation(update: bool) -> tuple[str, bool, str]:
+    name = f"report {annotate.COMMITTED_REPORT.name}"
+    try:
+        text = annotate.render_committed_report()
+    except Exception as exc:  # noqa: BLE001 - reported, not hidden
+        return (name, False, f"could not regenerate: {type(exc).__name__}: {exc}")
+    if update:
+        annotate.COMMITTED_REPORT.write_text(text, encoding="utf-8", newline="\n")
+        return (name, True, "rewritten")
+    current = (
+        annotate.COMMITTED_REPORT.read_text(encoding="utf-8")
+        if annotate.COMMITTED_REPORT.exists() else None
+    )
+    if current == text:
+        return (name, True, f"{len(text):,} chars identical")
+    return (name, False, "differs from the committed file")
 
 
 def _check_figure(update: bool) -> tuple[str, bool, str]:

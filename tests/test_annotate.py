@@ -149,6 +149,26 @@ def test_unsure_and_unanswered_never_count_as_agreement(packet: annotate.Packet)
     assert "Cohen's kappa: **1.00**" not in report
 
 
+def test_an_llm_annotator_report_says_it_is_not_a_person(packet: annotate.Packet) -> None:
+    perfect = _perfect(packet.key)
+    llm = annotate.build_report(packet.key, perfect, "llm")
+    human = annotate.build_report(packet.key, perfect)
+    assert "not a person" in llm and "upper bound" in llm
+    assert "not a person" not in human
+    with pytest.raises(ValueError):
+        annotate.build_report(packet.key, perfect, "robot")
+
+
+def test_the_committed_answers_belong_to_the_committed_sampling() -> None:
+    """The key is regenerated from the seed, so the answers must match its packet id."""
+    raw = json.loads(annotate.COMMITTED_ANSWERS.read_text(encoding="utf-8"))
+    packet = annotate.build_packet(
+        build.build_version("v2"), build.load_intents(version="v2"), seed=annotate.COMMITTED_SEED
+    )
+    assert raw["packet_id"] == packet.packet_id
+    assert len(raw["labels"]) == len(packet.items) and len(raw["ratings"]) == len(packet.translations)
+
+
 def test_translation_ratings_below_three_are_listed(packet: annotate.Packet) -> None:
     perfect = _perfect(packet.key)
     weak = replace(perfect.ratings[0], meaning=1)

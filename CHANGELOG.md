@@ -8,7 +8,10 @@
 - Second-annotator kit: `python -m zhipi.annotate` builds a blind offline annotation page
   (label judgement plus translation ratings) and an answer key, and scores the returned
   answers (agreement with a Wilson interval, Cohen's kappa with a bootstrap interval, by tier
-  and stratum). Protocol: `docs/ANNOTATION_GUIDE.md`. No annotation has been collected yet.
+  and stratum). Protocol: `docs/ANNOTATION_GUIDE.md`. A blind LLM annotator (not a human) agreed
+  with the author on 102 of 103 texts; the answers and report are committed
+  (`results/annotation/`, `results/annotation.md`) and checked by `python -m zhipi.verify`
+  (now 10 checks). Human agreement is still unmeasured.
 
 ## 0.1.0 (2026-10-24)
 

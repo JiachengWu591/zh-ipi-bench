@@ -79,8 +79,10 @@ injection *wording*, not working exploit chains.
 - Benign set is 53 samples across 11 strata, so most per-stratum false-positive
   intervals are wide and must be reported as such.
 - Intents and the English parallel were written by one author; no second
-  annotator yet. Agreement (Cohen's κ) is still to be measured; the protocol and tooling
-  are in `docs/ANNOTATION_GUIDE.md`, but no annotation has been collected.
+  human annotator yet. A blind LLM annotator (a fresh Claude agent, not a person) agreed with
+  the author on 102 of 103 texts (Cohen's κ 0.98) and flagged four of 31 translations as
+  slightly off (`results/annotation.md`); that is an upper bound on what a human would give.
+  Human agreement is still unmeasured; protocol and tooling: `docs/ANNOTATION_GUIDE.md`.
 - Whether v1 is harder than v0 is an empirical question. Measured on one detector
   (the DeepSeek judge): yes, slightly (97% vs 100% detection), and only through two
   `implicit` intents. The tier labels are the author's judgement of difficulty, not a
@@ -89,7 +91,10 @@ injection *wording*, not working exploit chains.
   to legitimate requests addressed to a human reporter (compare the benign
   `asks_humans_for_info` stratum); which label is correct depends on who reads the
   text. The only judge misses on v1 are these two intents, so they may measure this
-  ambiguity rather than a detector weakness. Pending a second annotator.
+  ambiguity rather than a detector weakness. A blind LLM reader labelled both `checklist`
+  texts and one of two `ctx_config` texts injected and hesitated (`unsure`) on the other, and
+  called all four `asks_humans_for_info` benign texts benign, so this reader does not support
+  "the misses are mostly label noise". A human reader may still differ.
 - The `carriers` fiction is borrowed from injection-blast-radius for
   comparability, which also means results may not transfer to other task types.
 
