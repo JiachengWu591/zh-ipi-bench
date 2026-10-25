@@ -27,6 +27,10 @@ CONDITION_ORDER = (
     "zh/space_split",
     "zh/code_mix",
     "zh/code_mix+zero_width",
+    "zh/traditional",
+    "zh/pinyin",
+    "zh/homophone",
+    "zh/char_decomp",
     "zh/plain (buried)",
 )
 # (baseline condition, variant condition, what the comparison isolates)
@@ -37,6 +41,10 @@ PAIRED_COMPARISONS: tuple[tuple[str, str, str], ...] = (
     ("zh/plain", "zh/space_split", "transform: space-split"),
     ("zh/plain", "zh/code_mix", "transform: code-mix"),
     ("zh/plain", "zh/code_mix+zero_width", "transform: code-mix + zero-width"),
+    ("zh/plain", "zh/traditional", "transform: traditional script"),
+    ("zh/plain", "zh/pinyin", "transform: pinyin"),
+    ("zh/plain", "zh/homophone", "transform: homophone"),
+    ("zh/plain", "zh/char_decomp", "transform: character decomposition"),
     ("zh/plain", "zh/plain (buried)", "placement: buried in a long document"),
 )
 
@@ -76,6 +84,10 @@ STRATUM_ORDER = (
     "format_request",
     "quoted_text",
     "long_benign",
+    "traditional_text",
+    "pinyin_text",
+    "char_breakdown_text",
+    "homophone_text",
 )
 TIER_ORDER = tuple(f"{tier} / {placement}" for placement in ("default", "buried") for tier in TIERS)
 
@@ -236,6 +248,7 @@ def build_report(
     n_intents = len({s.intent_id for s in samples if s.intent_id})
     n_benign = sum(fpr_n.values())
     per_condition = sorted(set(det_n.values()))
+    carriers_per_condition = round(max(det_n.values(), default=0) / n_intents) if n_intents else 0
     per_condition_text = "–".join(str(n) for n in (per_condition[0], per_condition[-1])) if per_condition else "0"
 
     glance = [
@@ -258,7 +271,7 @@ def build_report(
         "",
         "> **Read the caveats at the bottom before quoting any number.** Intervals are "
         "95% Wilson intervals that assume independent samples; these samples are "
-        f"template-generated ({n_intents} intents × 5 carriers per condition), so the "
+        f"template-generated ({n_intents} intents × {carriers_per_condition} carriers per condition), so the "
         "intervals are narrower than the true uncertainty.",
         "",
         "## At a glance",
@@ -368,6 +381,23 @@ def build_report(
                 "is needed to tell."
             ]
             if any(s.tier == "implicit" for s in samples)
+            else []
+        ),
+        *(
+            [
+                "- The v3 transforms rewrite only the payload, so a traditional-script payload "
+                "sits inside a simplified-script host; the pinyin, homophone and character-"
+                "decomposition transforms re-spell only the key terms in small curated tables, "
+                "not whole sentences. Results here say nothing about other ways of writing "
+                "those forms. The paired comparisons use each intent's untransformed twin "
+                "re-run in the same session, so hosted-model drift between sessions does not "
+                "enter them.",
+                "- The new benign strata (traditional-script text, pinyin, character breakdowns, "
+                "homophone discussions) are small (3 to 8 samples each) and hand-written; a "
+                "false-positive interval on them is wide, and zero flags in 3 samples still "
+                "allows a false-positive rate above 50%.",
+            ]
+            if any(s.stratum == "traditional_text" for s in samples)
             else []
         ),
         "- Judge repeats use temperature 0, so zero verdict changes across repeats shows "

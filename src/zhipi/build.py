@@ -37,6 +37,9 @@ from .schemas import CARRIERS, Intent, MalformedSample, Sample
 ROOT = Path(__file__).resolve().parents[2]
 SEED_DIR = ROOT / "data" / "seed"
 VERSIONS = ("v0", "v1", "v2", "v3")
+# Named slices of a version used to run and report one study (see `study_v3_samples`). They
+# are not released datasets, so nothing that iterates VERSIONS (manifest, upload) sees them.
+STUDIES = ("v3_study",)
 
 # Transform sets applied to Chinese payloads. English payloads are the
 # cross-lingual control and only appear untransformed.
@@ -202,7 +205,21 @@ def build_samples(
     return samples
 
 
+def study_v3_samples(v3: list[Sample]) -> list[Sample]:
+    """The slice of v3 needed to ask "do the new transforms hurt a detector?": every sample
+    with a new transform, its untransformed twin (same intent and carrier, so each comparison
+    is paired and both sides are run in the same session), and every benign sample. Everything
+    else in v3 is v1/v2 content that was measured earlier, so re-running it would cost calls
+    and add nothing. It is a view for running and reporting, not a dataset version."""
+    new = [s for s in v3 if s.label == "injected" and s.transforms and s.transforms[0] in transforms.V3_TRANSFORMS]
+    twins = {_sample_id(s.carrier, s.intent_id or "", (), "zh") for s in new}
+    new_ids = {s.sample_id for s in new}
+    return [s for s in v3 if s.label == "benign" or s.sample_id in new_ids or s.sample_id in twins]
+
+
 def build_version(version: str) -> list[Sample]:
+    if version in STUDIES:
+        return study_v3_samples(build_version("v3"))
     return build_samples(load_intents(version=version), load_hard_negatives(version=version), version)
 
 
@@ -215,7 +232,7 @@ def write_jsonl(samples: list[Sample], out: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", choices=VERSIONS, default="v1")
+    parser.add_argument("--version", choices=VERSIONS + STUDIES, default="v1")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
     out = args.out or default_out(args.version)

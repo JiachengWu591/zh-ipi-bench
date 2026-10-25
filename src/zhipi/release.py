@@ -31,7 +31,12 @@ CARD_TEMPLATE = ROOT / "release" / "DATASET_CARD.md"
 VERSIONS = build.VERSIONS
 
 # dataset version -> scratch directory holding its run output
-SCRATCH = {"v0": ROOT / "results" / "raw", "v1": ROOT / "results" / "raw_v1", "v2": ROOT / "results" / "raw_v2"}
+SCRATCH = {
+    "v0": ROOT / "results" / "raw",
+    "v1": ROOT / "results" / "raw_v1",
+    "v2": ROOT / "results" / "raw_v2",
+    "v3_study": ROOT / "results" / "raw_v3_study",
+}
 # Trial runs and response caches are scratch, not evidence.
 EXCLUDE_NAMES = ("weak-spike",)
 

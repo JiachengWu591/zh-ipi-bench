@@ -84,7 +84,7 @@ def load_dotenv(path: Path = ROOT / ".env") -> list[str]:
 def load_samples(path: Path) -> list[Sample]:
     if not path.exists():
         print(f"{path} not found; building it from the seed files")
-        version = path.stem if path.stem in build.VERSIONS else "v1"
+        version = path.stem if path.stem in build.VERSIONS + build.STUDIES else "v1"
         build.write_jsonl(build.build_version(version), path)
     return [
         Sample.from_dict(json.loads(line))

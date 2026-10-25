@@ -50,6 +50,7 @@ class Job:
 JOBS = (
     Job("phase1.md", "detectors", "v0"),
     Job("v1.md", "detectors", "v1"),
+    Job("v3_study.md", "detectors", "v3_study"),
     Job("v1_e2e.md", "e2e", "v1"),
     Job("v2_e2e.md", "e2e", "v2"),
     Job("v2_e2e_qwen25-7b.md", "e2e", "v2", "qwen25-7b"),

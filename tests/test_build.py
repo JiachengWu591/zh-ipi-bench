@@ -248,3 +248,24 @@ def test_v3_transformed_plaintext_intent_stays_the_plain_request() -> None:
     for s in by_id.values():
         if s.label == "injected" and s.transforms and s.transforms[0] in transforms.V3_TRANSFORMS:
             assert s.plaintext_intent == by_id[f"{s.carrier}-{s.intent_id}-plain-zh"].plaintext_intent
+
+
+def test_the_v3_study_slice_is_new_samples_their_plain_twins_and_all_benign() -> None:
+    v3 = {s.sample_id: s for s in build.build_version("v3")}
+    study = build.build_version("v3_study")
+    assert len({s.sample_id for s in study}) == len(study)
+    assert all(s.sample_id in v3 and v3[s.sample_id].text == s.text for s in study)
+    new = [s for s in study if s.transforms and s.transforms[0] in transforms.V3_TRANSFORMS]
+    twins = [s for s in study if s.label == "injected" and not s.transforms]
+    benign = [s for s in study if s.label == "benign"]
+    assert len(new) == 31 * 2 * 4
+    assert len(twins) == 31 * 2 and all(s.language == "zh" and s.placement == "default" for s in twins)
+    assert len(benign) == sum(1 for s in v3.values() if s.label == "benign") == 78
+    assert len(study) == len(new) + len(twins) + len(benign)
+    # every new sample has its twin in the slice, so every comparison is paired
+    plain = {(s.intent_id, s.carrier) for s in twins}
+    assert all((s.intent_id, s.carrier) in plain for s in new)
+
+
+def test_a_study_slice_is_not_a_released_version() -> None:
+    assert "v3_study" not in build.VERSIONS and "v3_study" in build.STUDIES
