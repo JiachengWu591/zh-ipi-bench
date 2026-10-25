@@ -41,7 +41,10 @@ needed. The corpus was chosen because the source project reports its undefended 
 leaking on these techniques, which did **not** reproduce on the model used here
 (see `docs/ROADMAP.md`, Phase 4).
 
-## v3 (added after the first release; not yet measured)
+## v3 (added after the first release)
+
+Measured on a 388-sample slice (`v3_study`: the new samples, their plain twins, all benign)
+with three detectors; see `results/v3_study.md` and the ROADMAP entry for what it showed.
 
 1,556 samples (1,478 injected, 78 benign): v2 byte-for-byte, plus
 
@@ -61,8 +64,8 @@ leaking on these techniques, which did **not** reproduce on the model used here
   `char_breakdown_text` (4), `homophone_text` (3). Each contains the surface form its
   transform produces, in an innocent context, so a detector cannot win by flagging the form.
 - What is **not** here: real-world text (decided against: licensing and de-identification
-  work for a small gain), mixed simplified/traditional payloads, tone-marked pinyin, and any
-  measurement. The tables are single-author and unreviewed by a second reader.
+  work for a small gain), mixed simplified/traditional payloads, tone-marked pinyin, and
+  measurement of detectors other than the three named above. The tables are single-author and unreviewed by a second reader.
 
 ## Intended use
 

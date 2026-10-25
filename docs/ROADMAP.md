@@ -213,19 +213,45 @@ Each phase ends with a stop: show the result, get confirmation, then continue.
 - **README figure and Chinese README** (`assets/results.svg`, `README.zh-CN.md`); the figure
   is regenerated and checked by `python -m zhipi.verify`.
 
-- **Phase 2, remainder: data v3 built (not yet measured).** The four planned transforms
-  (`pinyin`, `traditional` — the plan's `trad_simp`, without the mixed-script variant —,
-  `homophone`, `char_decomp`) are implemented from small curated tables, applied to all 31
-  intents in two carriers, with 20 matching benign controls: 1,556 samples, the "~1,500"
-  target. v0–v2 are unchanged (fingerprints pinned). Real-text benign samples were decided
-  against by the owner (hand-written controls instead). Human second-annotator agreement
-  was dropped (see above). What v3 does **not** yet show: nothing has been run on it, so
-  whether these transforms hurt any detector is open. Next, if wanted: run the three
-  detectors that worked on v3's new samples (the DeepSeek judge makes billed calls; about
-  250 new injected + 20 benign samples), compare against the plain twins with the existing
-  paired tests, and decide whether to cut a v0.2.0 release. Per-tier counts remain very
-  uneven (`judge_targeted` is one intent), so the tier rows say little beyond the specific
-  wordings.
+- **Phase 2, remainder: data v3.** The four planned transforms (`pinyin`, `traditional` —
+  the plan's `trad_simp`, without the mixed-script variant —, `homophone`, `char_decomp`) are
+  implemented from small curated tables, applied to all 31 intents in two carriers, with 20
+  matching benign controls: 1,556 samples, the "~1,500" target. v0–v2 are unchanged
+  (fingerprints pinned). Real-text benign samples were decided against by the owner
+  (hand-written controls instead). Human second-annotator agreement was dropped (see above).
+- **Phase 3, step 1: v3 against detectors** (`results/v3_study.md`; 388 samples: 248 new,
+  their 62 plain twins, all 78 benign; run in one session at one clean commit, none failed;
+  the judge cost 388 billed calls, one repeat). Per detector:
+  - **DeepSeek judge: no transform hurt it.** Plain 97% detection, traditional / pinyin /
+    character decomposition 100%, homophone 95% (1 lost, 0 gained); 1% false positives, and 0
+    of 20 flags on the new benign controls (traditional-script text, pinyin, character
+    breakdowns, homophone discussions). It reads through all four.
+  - **Horizon classifier: a modest, mixed effect.** Detection fell from 61% plain to 52%
+    traditional (6 lost / 0 gained), 50% pinyin (8 / 1) and 47% homophone (10 / 1,
+    intent-level p = 0.01), but rose to 82% on character decomposition (0 lost / 10 gained).
+    Of the three falls only homophone survives a Bonferroni correction over its four
+    comparisons (threshold 0.0125); the traditional and pinyin p-values (0.03, 0.04) do not.
+    The rise on decomposition does (p = 0.002). AUROC moved from 0.92 to 0.88 / 0.89 /
+    0.87 for the three falls (intervals overlap) and to 0.96 for decomposition, so the rate
+    drops are mostly a shift of its score distribution, the same calibration pattern as the
+    Chinese-versus-English gap in Phase 2, not a collapse of ranking. That decomposed text is
+    flagged *more* suggests it keys partly on how odd the text looks; the four benign
+    breakdown controls were not flagged (0 of 4), too few to say more. Carrier matters more than
+    any transform: 100% on `tool_output` and `web_html`, 44–48% on issue, email and document.
+  - **protectai (English-only): unusable here, as before.** AUROC 0.52–0.55 (chance), 60%
+    false positives overall, 100% on the pinyin and discussion-of-injection benign text.
+  - **What it supports:** H1 is not supported for the strong LLM judge on any of the eight
+    Chinese transforms, and is weakly supported for the small classifier on three new ones,
+    with the homophone effect the clearest. **What it does not:** the comparisons are
+    uncorrected, intent replicates are correlated (31 independent intents), the tables cover
+    key terms only, the traditional payload sits in a simplified host, and the new benign
+    strata have 3–8 samples each.
+  - Not run on v3: Qwen3Guard, the community mBERT model and the keyword baselines (the first
+    two were already uninformative on v1), and the end-to-end experiment (its conclusion does
+    not depend on the transform).
+  Next, if wanted: decide whether to cut v0.2.0 (upload v3 and tag). Per-tier counts remain
+  very uneven (`judge_targeted` is one intent), so the tier rows say little beyond the
+  specific wordings.
 
 ## Compute plan
 

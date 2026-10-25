@@ -5,6 +5,12 @@
 > This is a one-author technical report on a small, template-generated benchmark. Every
 > number in it is reproduced offline from committed result rows by `python -m zhipi.verify`.
 > It makes no claim to be the first of anything; section 2 says what was and was not checked.
+>
+> *Note added after v0.1.0:* this report describes the v0.1.0 release (data v0 to v2, four
+> transforms). Four further transforms (traditional script, pinyin, homophone, character
+> decomposition; data v3) were measured afterwards; the results are in `results/v3_study.md`
+> and summarised in `docs/ROADMAP.md`. They qualify the report's H1 conclusion for the small
+> classifier, so read them together.
 
 ## Abstract
 

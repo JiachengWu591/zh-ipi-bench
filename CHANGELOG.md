@@ -8,8 +8,15 @@
   once against OpenCC), `pinyin`, `homophone`, `char_decomp`. Applied to all 31 intents in the
   `issue` carrier plus one rotating other carrier. Twenty hand-written benign controls that
   contain the same surface forms innocently (traditional-script issues, pinyin, character
-  breakdowns, homophone discussions). Not yet measured against any detector and not yet
-  published to Hugging Face; the dataset card template already lists a `v3` config.
+  breakdowns, homophone discussions). Not yet published to Hugging Face; the dataset card
+  template already lists a `v3` config.
+- **v3 detector study** (`results/v3_study.md`, 388 samples: the new ones, their plain
+  twins, all benign; rows in `results/rows/v3_study/`, checked by `python -m zhipi.verify`,
+  now 12 checks). DeepSeek judge: no loss from any new transform, 1% false positives.
+  Horizon classifier: three of four new transforms lowered detection (homophone 61% to 47%,
+  p = 0.01) with AUROC moving only 0.92 to 0.87-0.89, and character decomposition raised it
+  to 82%. protectai: AUROC about 0.5, flags 60% of benign text. The detector report gains
+  the four conditions, the new benign strata and an intent-level sign test.
 - Real-text benign samples were considered and not done (license and de-identification work
   for a small gain); the benign controls remain hand-written.
 

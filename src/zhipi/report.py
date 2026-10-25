@@ -72,6 +72,39 @@ def paired_cell(rows: list[Row], base: str, variant: str) -> str:
     if lost == 0 and gained == 0:
         return f"no change (n={len(keys)})"
     return f"{lost}↓/{gained}↑ of {len(keys)}, p={mcnemar_exact(lost, gained):.2f}"
+
+
+def intent_level_cell(rows: list[Row], base: str, variant: str) -> str:
+    """The same comparison with the intent as the unit: an intent counts as `↓` if the
+    variant was flagged in fewer of its carriers than the baseline, `↑` if in more. The
+    carriers of one intent carry the same payload, so this is closer to the number of
+    independent comparisons than the per-sample pairs. Exact sign test; ties are dropped."""
+
+    def index(cond: str) -> dict[tuple[str | None, str], Row]:
+        return {
+            (r.sample.intent_id, r.sample.carrier): r
+            for r in rows
+            if r.sample.label == "injected" and r.completed and by_condition(r.sample) == cond
+        }
+
+    base_idx, var_idx = index(base), index(variant)
+    per_intent: dict[str | None, list[int]] = defaultdict(lambda: [0, 0])
+    for key in base_idx.keys() & var_idx.keys():
+        per_intent[key[0]][0] += int(base_idx[key].flagged)
+        per_intent[key[0]][1] += int(var_idx[key].flagged)
+    if not per_intent:
+        return "n/a"
+    down = sum(1 for b, v in per_intent.values() if v < b)
+    up = sum(1 for b, v in per_intent.values() if v > b)
+    if down == 0 and up == 0:
+        return f"no change (n={len(per_intent)} intents)"
+    return f"{down}↓/{up}↑ of {len(per_intent)} intents, p={mcnemar_exact(down, up):.2f}"
+
+
+INTENT_LEVEL_COMPARISONS = tuple(
+    (base, variant, label) for base, variant, label in PAIRED_COMPARISONS
+    if variant in ("zh/traditional", "zh/pinyin", "zh/homophone", "zh/char_decomp")
+)
 STRATUM_ORDER = (
     "plain",
     "imperative_to_humans",
@@ -294,7 +327,7 @@ def build_report(
         "`a↓/b↑` = the baseline detected it and the variant missed it (`a`), or the "
         "reverse (`b`). `p` is an exact two-sided McNemar test; pairs that agree carry no "
         "information. Not corrected for the many comparisons made here. The pairs are "
-        "template-generated and the 5 carriers of one intent are replicates of the same "
+        f"template-generated and the {carriers_per_condition} carriers of one intent are replicates of the same "
         "payload, so the effective number of independent pairs is closer to the number of "
         "intents than to the pair count; treat a small `p` as a lead, not a finding, and "
         "check the AUROC table below before reading a rate difference as lost "
@@ -307,9 +340,30 @@ def build_report(
             + " | ".join(paired_cell(rows[d], base, variant) for d in defenses)
             + " |"
             for base, variant, label in PAIRED_COMPARISONS
-            if any(s.language and by_condition(s) == variant for s in samples)
+            if all(any(s.label == "injected" and by_condition(s) == cond for s in samples) for cond in (base, variant))
         ],
         "",
+        *(
+            [
+                "### Intent-level view of the v3 transforms",
+                "",
+                "The unit is the intent: `↓` = the variant was flagged in fewer of that intent's "
+                "carriers than the plain text, `↑` = in more; ties are dropped; exact sign test. "
+                "This is the fairer count of independent comparisons (the carriers of one intent "
+                "carry the same payload), and still not corrected for the number of comparisons "
+                "made in this table.",
+                "",
+                "| comparison | " + " | ".join(defenses) + " |",
+                "|---|" + "|".join("---" for _ in defenses) + "|",
+                *[
+                    f"| {label} | " + " | ".join(intent_level_cell(rows[d], base, variant) for d in defenses) + " |"
+                    for base, variant, label in INTENT_LEVEL_COMPARISONS
+                ],
+                "",
+            ]
+            if any(by_condition(s) == "zh/pinyin" for s in samples)
+            else []
+        ),
         *auroc_section(defenses, rows),
         "## Detection by payload tier and placement (injected, Chinese, untransformed)",
         "",

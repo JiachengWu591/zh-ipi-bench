@@ -2,7 +2,7 @@
 
 import argparse
 
-from zhipi import build, report, run_eval
+from zhipi import build, report, run_eval, transforms
 from zhipi.cache import ResponseCache
 from zhipi.defenses import EN_KEYWORDS, ZH_KEYWORDS
 from zhipi.evaluate import evaluate
@@ -22,8 +22,10 @@ def test_report_end_to_end(tmp_path) -> None:  # type: ignore[no-untyped-def]
     text = report.build_report(raw, samples, {}, tmp_path / "v0.jsonl")
 
     for condition in report.CONDITION_ORDER:
-        if "buried" not in condition:  # v0 has no buried samples
+        # v0 has no buried samples and none of the v3 transforms
+        if "buried" not in condition and condition.split("/")[1] not in transforms.V3_TRANSFORMS:
             assert condition in text
+    assert "Intent-level view" not in text
     assert "discusses_injection" in text
     assert "wrong-tool control" in text  # the caveats are part of the report
     assert "n/a" not in text.split("## False-positive")[0]  # nothing failed here
@@ -171,3 +173,39 @@ def test_dry_run_makes_no_calls_and_writes_nothing(tmp_path, monkeypatch, capsys
     out = capsys.readouterr().out
     assert "678 calls" in out and "billed" in out
     assert not (tmp_path / "raw").exists()
+
+
+def test_v3_study_report_shows_the_new_transforms_paired_and_at_intent_level(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    samples = build.build_version("v3_study")
+    run_eval.write_rows(ZH_KEYWORDS.name, evaluate(ZH_KEYWORDS, samples), tmp_path, append=False)
+    text = report.build_report(report.load_raw(tmp_path), samples, {}, tmp_path / "v3_study.jsonl")
+    for condition in ("zh/plain", "zh/traditional", "zh/pinyin", "zh/homophone", "zh/char_decomp"):
+        assert condition in text
+    for label in ("transform: traditional script", "transform: character decomposition"):
+        assert label in text
+    for stratum in ("traditional_text", "pinyin_text", "char_breakdown_text", "homophone_text"):
+        assert stratum in text
+    assert "### Intent-level view of the v3 transforms" in text
+    assert "31 intents × 2 carriers per condition" in text
+    # comparisons whose baseline is absent from the slice are left out, not printed as n/a rows
+    assert "language: Chinese vs the English control" not in text
+    assert "placement: buried" not in text
+
+
+def test_intent_level_cell_counts_intents_not_samples() -> None:
+    from zhipi.evaluate import Row
+    from zhipi.report import intent_level_cell
+    from zhipi.schemas import Sample
+
+    def row(carrier: str, transforms: tuple[str, ...], flagged: bool, intent: str = "a") -> Row:
+        return Row(
+            Sample(sample_id=f"{carrier}-{intent}-{'_'.join(transforms) or 'plain'}-zh", label="injected",
+                   carrier=carrier, language="zh", transforms=transforms, text="x", intent_id=intent,
+                   plaintext_intent="p", tier="explicit"),
+            flagged, True,
+        )
+
+    # intent "a": plain flagged in both carriers, variant in one -> one intent down (not two samples)
+    rows = [row("issue", (), True), row("email", (), True), row("issue", ("pinyin",), True), row("email", ("pinyin",), False)]
+    assert intent_level_cell(rows, "zh/plain", "zh/pinyin").startswith("1↓/0↑ of 1 intents")
+    assert intent_level_cell([row("issue", (), True), row("issue", ("pinyin",), True)], "zh/plain", "zh/pinyin") == "no change (n=1 intents)"

@@ -60,7 +60,7 @@ treated as independent, so they are narrower than the true uncertainty.*
 | question | finding (v1 / v2 data; 95% intervals in the reports) |
 |---|---|
 | Do detectors work on Chinese indirect injection? | A strong LLM judge: 97% detection, 2% false positives. A small multilingual classifier: 80% / 13%. A community classifier flagged **everything**; an English-only one flagged **55%** of benign text. |
-| H1: do Chinese-specific transforms hurt? | **Not supported** for the two detectors that work (fullwidth, zero-width, spaced, code-mixed: no measurable effect). A language gap in detection *rate* (97% vs 81%) was mostly calibration (AUROC 0.97 vs 0.94). Burying the payload in a long document did hurt (AUROC 0.94 → 0.89). |
+| H1: do Chinese-specific transforms hurt? | **Not supported** for the LLM judge (no transform measurably hurt it, including the four added in v3). For the small classifier the first four transforms did nothing, but three of the four v3 ones lowered its detection rate (homophone 61% → 47%, p = 0.01; traditional and pinyin p = 0.03 and 0.04, which do not survive correction for four tests) while its AUROC only drifted 0.92 → 0.87–0.89 inside overlapping intervals, and character decomposition *raised* detection to 82%. A language gap in detection *rate* (97% vs 81%) was mostly calibration (AUROC 0.97 vs 0.94). Burying the payload in a long document did hurt (AUROC 0.94 → 0.89). |
 | H2: benign look-alikes | Hard negatives separate detectors that headline detection cannot (e.g. a request to a *human* to paste their config). |
 | H3: does isolation contain injections? | With the audit bypassed the isolated pipeline leaked a planted fake secret in **0 of 239** runs. On a strong model the undefended baseline barely leaked (2%), so isolation had little to prevent; with a weak local model (Qwen2.5-7B) the baseline leaked in **81 of 717 (11%)**. |
 
@@ -110,8 +110,8 @@ tests/            offline tests (no model, network, or key needed)
 Data: **v0** (226 samples, frozen; what Phase 1 was measured on) and **v1** (803 samples:
 19 intents in four tiers, a "buried in a long document" placement, 53 benign samples
 in 11 strata), plus **v2** (1,288 samples: v1 plus twelve attacks ported from
-injection-blast-radius's corpus, and benign issues containing HTML comments), and **v3** (1,556 samples, not yet released or measured
-against detectors: v2 plus four more Chinese transforms on every intent — traditional script,
+injection-blast-radius's corpus, and benign issues containing HTML comments), and **v3** (1,556 samples, not yet released; measured on a
+388-sample slice, `results/v3_study.md`: v2 plus four more Chinese transforms on every intent — traditional script,
 pinyin, homophones, character decomposition — and 20 benign controls with the same surface
 forms; v0–v2 are pinned by tests and the manifest). Working [data card](docs/DATA_CARD.md).
 

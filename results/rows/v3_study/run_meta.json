@@ -1,0 +1,76 @@
+{
+  "hf-classifier:Horizon-Labs/prompt-injection-guard-base": {
+    "model_id": "Horizon-Labs/prompt-injection-guard-base",
+    "revision": "495ee67524911c8409f7aec7b5f135b94aef15ea",
+    "device": "cpu",
+    "max_tokens": 2048,
+    "stride": 512,
+    "aggregation": "max over windows",
+    "labels": {
+      "0": "SAFE",
+      "1": "INJECTION"
+    },
+    "role": "Horizon-Labs multilingual agent-oriented classifier; author-reported metrics, not independently verified",
+    "threshold": 0.5,
+    "run_at_utc": "2026-10-25T08:34:37+00:00",
+    "dataset_sha256": "72cef4ff743309c3a34764dd70e80f68d191236a56fdfb6a9b3678a029b081da",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "ad07bcabb5386d12c7571b11f3ff1cbb395180fb",
+      "dirty": false
+    }
+  },
+  "hf-classifier:protectai/deberta-v3-base-prompt-injection-v2": {
+    "model_id": "protectai/deberta-v3-base-prompt-injection-v2",
+    "revision": "90c9989b1a342275dd0d1a95aad283c04e075671",
+    "device": "cpu",
+    "max_tokens": 512,
+    "stride": 64,
+    "aggregation": "max over windows",
+    "labels": {
+      "0": "SAFE",
+      "1": "INJECTION"
+    },
+    "role": "English-only, widely used (English-centric control); card states English only",
+    "threshold": 0.5,
+    "run_at_utc": "2026-10-25T08:36:35+00:00",
+    "dataset_sha256": "72cef4ff743309c3a34764dd70e80f68d191236a56fdfb6a9b3678a029b081da",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "ad07bcabb5386d12c7571b11f3ff1cbb395180fb",
+      "dirty": false
+    }
+  },
+  "deepseek-judge": {
+    "model_id": "deepseek-v4-flash",
+    "prompt_hash": "f5243ad501f5",
+    "temperature": 0.0,
+    "tool_choice": "forced",
+    "thinking": "disabled",
+    "run_at_utc": "2026-10-25T08:48:06+00:00",
+    "dataset_sha256": "72cef4ff743309c3a34764dd70e80f68d191236a56fdfb6a9b3678a029b081da",
+    "python": "3.12.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.14.1",
+      "transformers": "5.20.1",
+      "openai": "3.35.1"
+    },
+    "git": {
+      "commit": "ad07bcabb5386d12c7571b11f3ff1cbb395180fb",
+      "dirty": false
+    }
+  }
+}

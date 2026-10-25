@@ -43,7 +43,7 @@ Code, evaluation harness, results and the technical report:
 ## Versions
 
 Each version contains the previous one. v0, v1 and v2 are frozen (the repository pins a
-content fingerprint for each); `v3` is newer and has not been measured against detectors yet.
+content fingerprint for each); `v3` is newer: only a slice of it (the new samples and their plain twins) has been run against detectors.
 
 | config | samples | injected | benign | what it adds |
 |---|--:|--:|--:|---|
