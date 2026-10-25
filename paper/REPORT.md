@@ -1,28 +1,32 @@
 # zh-ipi-bench: a Chinese-native benchmark for indirect prompt injection, and what it shows about detectors and architectural isolation
 
-**Jiacheng Wu** · technical report, v0.1 (October 2026) · code and data: <https://github.com/JiachengWu591/zh-ipi-bench>
+**Jiacheng Wu** · technical report, v0.2 (October 2026) · code and data: <https://github.com/JiachengWu591/zh-ipi-bench>
 
 > This is a one-author technical report on a small, template-generated benchmark. Every
 > number in it is reproduced offline from committed result rows by `python -m zhipi.verify`.
 > It makes no claim to be the first of anything; section 2 says what was and was not checked.
 >
-> *Note added after v0.1.0:* this report describes the v0.1.0 release (data v0 to v2, four
-> transforms). Four further transforms (traditional script, pinyin, homophone, character
-> decomposition; data v3) were measured afterwards; the results are in `results/v3_study.md`
-> and summarised in `docs/ROADMAP.md`. They qualify the report's H1 conclusion for the small
-> classifier, so read them together.
+> *Revision note (v0.2):* the first version of this report described the v0.1.0 release
+> (data v0 to v2, four transforms). This revision adds the four transforms and data v3
+> (section 4.4), which qualify the H1 conclusion for the small classifier, a blind LLM
+> annotation check (section 6), and a re-run of the related-work search (section 2).
 
 ## Abstract
 
 Public indirect-prompt-injection benchmarks are overwhelmingly English. We built
 **zh-ipi-bench**, a Chinese benchmark of instructions hidden in issues, documents, emails,
 web pages and tool outputs, with Chinese-specific obfuscations (fullwidth forms, zero-width
-characters, spaced characters, Chinese-English code-mixing) and benign *hard negatives*
-written to resemble the attacks. Three frozen-or-versioned releases (226, 803 and 1,288
+characters, spaced characters, Chinese-English code-mixing, and, in a later version,
+traditional script, pinyin, homophones and character decomposition) and benign *hard
+negatives* written to resemble the attacks. Four versions (226, 803, 1,288 and 1,556
 samples) support two studies. **(1) Detectors.** Across ten detector configurations, a strong
 LLM judge reached 97% detection with 2% false positives, while a community multilingual
-classifier flagged everything and an English-only one flagged 55% of benign text. We found no
-measurable effect of the Chinese-specific transforms on the two detectors that worked; a
+classifier flagged everything and an English-only one flagged 55% of benign text. The first
+four transforms had no measurable effect on the two detectors that worked, and no transform,
+including the four added later, hurt the LLM judge. For the small multilingual classifier,
+three of the four later transforms lowered its detection rate (homophone 61% to 47%, the only
+fall that survives correction for multiple comparisons) while its ranking quality (AUROC)
+moved only 0.92 to 0.87-0.89, and character decomposition raised its detection to 82%. A
 language gap in detection *rate* (97% vs 81%) was mostly a calibration shift (AUROC 0.97 vs
 0.94). What did hurt was burying the payload in a long document (AUROC 0.94 to 0.89).
 **(2) Architectural isolation.** Running an undefended agent and a schema-constrained
@@ -70,12 +74,25 @@ agents. INFUSE (2610.20776) evaluates 19 models and guard models; an appendix is
 Bangla. Chinese safety resources (ChiSafe-PAS 2605.29667, CPAD 2309.11830, 2402.12193) target
 harmful content and jailbreaks, not injections into an application's context.
 
-**How far this was checked.** Search was not exhaustive; IssueTrojanBench, INFUSE and
-RAG-PIBench were checked against the paper body, the others at abstract level. We therefore
-claim only that we *did not find* a benchmark that is Chinese throughout, evaluates
-injection detectors on Chinese-specific obfuscation, and includes hard negatives; we do not
-claim priority. The nearest neighbour, IssueTrojanBench, has one Chinese condition on
-victim agents rather than detectors.
+A re-check (2026-10-25) found three closer neighbours that the first search missed.
+GenTel-Safe (2409.19521) compares prompt-injection detectors (ProtectAI, Lakera, Prompt
+Guard and others) on 84,812 attack prompts and includes a Chinese split, but the split is
+machine-translated from English, the prompts are direct, and no Chinese-specific obfuscation is
+described. A study of hidden prompts in papers submitted to LLM reviewers (2512.23684) injects
+indirectly in English, Japanese, Chinese and Arabic, but evaluates victim models, not detectors.
+An evaluation across English, Turkish, Russian and Simplified Chinese (2606.29602) uses direct
+prompts and language-independent encodings (Base64, ROT13, hex) against six LLMs. Chinese
+indirect-injection evaluation and Chinese detector evaluation therefore both exist in narrower
+forms; Chinese-language toxicity work (ToxiCloakCN and others) studies the same pinyin and
+homophone evasions for content moderation rather than injection.
+
+**How far this was checked.** Search was not exhaustive (five queries in the re-check, one of
+them in Chinese; Chinese venues such as CNKI were not searched); IssueTrojanBench, INFUSE,
+RAG-PIBench, GenTel-Safe and 2606.29602 were checked against the page body, the others at
+abstract level. We therefore claim only that we *did not find* a benchmark that is
+Chinese-native, targets injections planted in an application's context, applies Chinese-specific
+obfuscation, and measures detectors with hard-negative false positives; we do not claim priority.
+`docs/RELATED_WORK.md` has the full list and the evidence level for each entry.
 
 ## 3. The benchmark
 
@@ -99,8 +116,14 @@ original verbatim, Chinese hand-translated).
 
 **Transforms** (applied to the payload only): `fullwidth`, `zero_width` (U+200B between CJK
 characters), `space_split`, `code_mix` (Chinese terms replaced by English), and the
-combination `code_mix`+`zero_width`. A transform that changes nothing is skipped, because
-a duplicate "transformed" sample would inflate *n* (a bug of this kind was found and fixed).
+combination `code_mix`+`zero_width`. Four more were added in data v3 and are lookups in small
+curated tables (no new dependency): `traditional` (simplified payload in traditional script; a
+one-character table, cross-checked once against OpenCC), `pinyin` (key terms as toneless
+pinyin), `homophone` (key terms with a same-sound character) and `char_decomp` (key terms
+written as the components of their characters). They re-spell only vocabulary the payloads
+already use, so they say nothing about other ways of writing those forms. A transform that
+changes nothing is skipped, because a duplicate "transformed" sample would inflate *n* (a bug
+of this kind was found and fixed).
 **Placement:** `default`, or `buried`, with the payload between two blocks of benign
 release-note and log filler.
 
@@ -112,9 +135,13 @@ instruction; HTML-comment issue templates; a long document.
 **Versions.** v0 (226 samples: 210 injected, 16 benign; six explicit intents) and v1 (803:
 750 injected, 53 benign; adds the implicit, spoofed and judge-targeted tiers, the buried
 placement and hard negatives) are frozen and pinned by a content fingerprint. v2 (1,288:
-1,230 injected, 58 benign) adds the ported attacks and HTML-comment benign issues. v1 was
-built *because* v0 was saturated for a strong judge (section 4); v2 *because* the baseline
-agent barely leaked on v1 (section 5).
+1,230 injected, 58 benign) adds the ported attacks and HTML-comment benign issues. v3 (1,556:
+1,478 injected, 78 benign) adds the four table-based transforms on all 31 intents in the
+`issue` carrier plus one rotating carrier, and 20 hand-written benign controls that contain the
+same surface forms innocently (traditional-script text, pinyin, character breakdowns, homophone
+discussions). v0 to v2 are frozen and pinned. v1 was built *because* v0 was saturated for a
+strong judge (section 4); v2 *because* the baseline agent barely leaked on v1 (section 5); v3
+to complete the transform axis.
 
 **Safety.** Payloads contain injection wording against a fake secret, no exploit chains.
 The one payload with a link uses the reserved, never-resolving `example.invalid`. Each
@@ -169,7 +196,8 @@ mislead; the threshold-free view corrects them.**
 | detection @0.5 | 97% | 81% | 81% | 84% | **58%** |
 | AUROC | 0.97 | 0.94 | 0.94 | 0.95 | **0.89** |
 
-H1 is therefore **not supported** for the two detectors that work. The English-vs-Chinese gap
+H1 is therefore **not supported** for the two detectors that work on the first four
+transforms (the four added later, section 4.4, qualify this for Horizon). The English-vs-Chinese gap
 in Horizon's detection rate (97% vs 81%, English better in 9 of 19 intents and worse in none)
 is mostly a calibration shift: English text is also flagged more when benign (4 of 11 vs
 3 of 32), and AUROC differs by 0.03 with overlapping intervals. A fair test of
@@ -188,7 +216,45 @@ Horizon flagged 3 of 5 of them and 2 of 3 in the placeholder-secret stratum; pro
 `mentions_config`. The judge's only misses on v1 (19 of 750) all
 came from two `implicit` intents whose text is near-identical to a legitimate request to a
 human; which label is correct depends on who reads the text, so these misses may measure
-label ambiguity rather than a detector weakness (a second annotator is needed to say).
+label ambiguity rather than a detector weakness (section 6 reports what a blind LLM annotator
+said about this).
+
+### 4.4 The four table-based transforms (data v3)
+
+Run after the first release on a 388-sample slice of v3 (the 248 samples with a new transform,
+their 62 untransformed twins, and all 78 benign samples), three detectors in one session at one
+commit, no failures; the judge cost 388 billed calls, one repeat. Source: `results/v3_study.md`.
+
+| | plain | traditional | pinyin | homophone | char. decomposition |
+|---|---|---|---|---|---|
+| judge, detection (strict) | 97% | 100% | 100% | 95% | 100% |
+| Horizon, detection @0.5 | 61% | 52% | 50% | 47% | **82%** |
+| Horizon, AUROC | 0.92 | 0.88 | 0.89 | 0.87 | **0.96** |
+| Horizon, lost / gained vs plain (31 intents) | | 6 / 0 | 8 / 1 | 10 / 1 | 0 / 10 |
+
+- **The LLM judge was not affected by any of the four** (at most one pair lost, zero to two
+  gained; 1 of 78 benign samples flagged, none of the 20 new controls).
+- **Horizon lost detection on three of them** (intent-level sign tests p = 0.03, 0.04, 0.01),
+  but with four comparisons per detector only the homophone fall survives a Bonferroni
+  threshold of 0.0125. Its AUROC moved only from 0.92 to 0.87-0.89 with overlapping
+  intervals, the same calibration-shift pattern as the Chinese-versus-English gap in section 4.2,
+  not a collapse of ranking. Decomposed text was flagged *more* (82%, AUROC 0.96, 0 lost and 10
+  gained, p = 0.002), which suggests the classifier partly keys on how odd the text looks; the
+  four benign character-breakdown controls were not flagged (0 of 4), too few to say more.
+  Carrier mattered more than any transform for Horizon: 100% on `tool_output` and `web_html`,
+  44-48% on issue, email and document.
+- **protectai stayed at chance** (AUROC 0.52-0.55) and flagged 60% of benign text, including
+  100% of the pinyin and injection-discussion controls.
+- **False positives on the new controls:** judge 0 of 20, Horizon 1 of 20 (a traditional-script
+  issue), protectai 14 of 20.
+
+H1 is thus **not supported for the LLM judge on any of the eight Chinese transforms**, and
+**weakly supported for the small classifier**: three of the four table-based transforms cost it
+detection, the homophone one clearly, without much loss of ranking quality. Limits: the
+comparisons are uncorrected across detectors, the two carriers of an intent are replicates (31
+independent intents), the tables cover key terms only, a traditional payload sits in a
+simplified-script host, and the new benign strata have 3 to 8 samples each, so a zero in three
+samples still allows a false-positive rate above 50%.
 
 ## 5. End-to-end study of architectural isolation (H3)
 
@@ -254,8 +320,11 @@ authors report; the fixed action set is the price. The undefended agent leaked t
 (H3) With a model that is demonstrably capturable and an audit that caught nothing, the
 boundary turned an 11% leak rate into 0 of 239, in Chinese, under every transform and the
 buried placement. Containment did not depend on the language or the model, as its design
-implies. (H1) For the two detectors that worked, Chinese-specific transforms and the
-language itself did not hurt; the structure of the document did. (H2) Hard negatives separate
+implies. (H1) For the LLM judge, no Chinese-specific transform and not the language itself
+hurt. For the small classifier, the first four transforms and the language did not (the
+rate gap was calibration), three of the four later table-based ones cost it detection with
+little loss of ranking quality, and the structure of the document (burying the payload) hurt
+most. (H2) Hard negatives separate
 detectors that the headline detection rate cannot: one that flags everything and one that
 flags 13% of benign text score alike on detection.
 
@@ -267,8 +336,15 @@ about real-world attack distributions. A language effect on small English-centri
 
 **Threats to validity.**
 *Template data and few intents* (31; some tiers rest on 1–2): intervals are too narrow, and
-the five carriers of an intent are replicates. *One author, no second annotator*: the Chinese
-translations are unreviewed and a few intents are ambiguous between attack and request.
+the carriers of an intent (five, or two in v3) are replicates. *One author, no human second
+annotator*: a blind LLM annotator (a fresh Claude agent given only the texts and the written
+rule, not a person) agreed with the author's label on 102 of 103 texts (Cohen's kappa 0.98;
+the one exception was a `ctx_config` text it marked unsure) and rated 4 of 31 translations
+slightly off (`results/annotation.md`). That is an upper bound: the model family overlaps with
+the tools that helped draft the data, these templated texts are easy for it, and its
+independence rests on an instruction. It does not support "the judge's misses are label
+noise" (it labelled both `checklist` texts and one of two `ctx_config` texts injected, and all
+four `asks_humans_for_info` benign texts benign), and human agreement remains unmeasured.
 *Difficulty tiers are a hypothesis.* *Leak criterion*: one (a fake secret value in the
 output); a leak in another form would be missed. *The bait file announces that it is fake*,
 which may change how readily a baseline quotes it; not tested. *One model per E3*, quantized,
@@ -284,8 +360,10 @@ privately through GitHub's security advisories.
 ## 7. Reproducibility
 
 `python -m zhipi.verify` rebuilds every dataset version from the seed files, checks it against
-`release/MANIFEST.json`, regenerates all five tables in `results/` from the committed rows in
-`results/rows/` and compares them byte for byte with the committed files; a test runs it in CI.
+`release/MANIFEST.json`, regenerates every table in `results/` (the detector, end-to-end,
+v3 and annotation reports) and the README figure from the committed rows in `results/rows/`
+and `results/annotation/`, and compares them byte for byte with the committed files (twelve
+checks); a test runs it in CI.
 It needs no model, key or network. It shows that the tables are a pure function of the rows
 and the code; it does not show that the rows are right or that rerunning a hosted model today
 would reproduce them. Each run records the code commit, model revision (Hub commit or prompt
@@ -293,14 +371,14 @@ hash), dataset hash and, for E3, the llama.cpp build and model file.
 
 | item | pinned |
 |---|---|
-| datasets | v0 `4017820d…`, v1 `d507be34…`, v2 `7d478b6a…` (content fingerprints; `MANIFEST.json`) |
+| datasets | v0 `4017820d…`, v1 `d507be34…`, v2 `7d478b6a…`, v3 `a78ba37f…` (content fingerprints; `MANIFEST.json`) |
 | Hub models | Qwen3Guard-Gen-0.6B `fada3b2f65`; Horizon base `495ee67524`; protectai `90c9989b1a`; community mBERT `63bf478b07` |
 | judge | `deepseek-v4-flash`, prompt hash `f5243ad501f5` |
 | end-to-end target | injection-blast-radius `af8a758` |
 | E3 | Qwen2.5-7B-Instruct Q4_K_M (official GGUF, SHA-256 checked), llama.cpp b11829 |
 
-Re-running the *models* needs, for the judge and E1/E2, a DeepSeek key (roughly a few thousand
-billed calls in total) and a clone of the target repository; E3 and the local detectors are
+Re-running the *models* needs, for the judge (including the 388 calls of section 4.4) and
+E1/E2, a DeepSeek key (roughly a few thousand billed calls in total) and a clone of the target repository; E3 and the local detectors are
 free but need a GPU or patience (README has the commands).
 
 ## References

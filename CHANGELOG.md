@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Report revised (v0.2 of the text)**: the v3 transform results (new section 4.4), the blind
+  annotation check, and a re-run of the related-work search folded in. The re-check found
+  three closer neighbours the first search missed (GenTel-Safe: detectors with machine-translated
+  Chinese; arXiv 2512.23684: indirect Chinese injection on victim models; arXiv 2606.29602:
+  multilingual obfuscated direct prompts), so `docs/RELATED_WORK.md` now says "no Chinese
+  detector evaluation exists" and "no Chinese indirect-injection evaluation exists" are both
+  false in narrower forms, and keeps the claim to the combination.
+
 ## 0.2.0 (2026-10-25)
 
 Second release: four more Chinese transforms, the detector results on them, and a blind
