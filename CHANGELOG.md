@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-25)
+
+Second release: four more Chinese transforms, the detector results on them, and a blind
+annotation check. Data v0, v1 and v2 are byte-identical to 0.1.0 (pinned in
+`release/MANIFEST.json`); the report `paper/REPORT.md` still describes 0.1.0 and carries a
+note pointing to the newer results.
 
 - **Data v3** (1,556 samples: 1,478 injected, 78 benign; v0–v2 byte-identical and pinned).
   Four new Chinese transforms backed by small curated tables (`zh_tables.py`, no new
@@ -8,8 +13,7 @@
   once against OpenCC), `pinyin`, `homophone`, `char_decomp`. Applied to all 31 intents in the
   `issue` carrier plus one rotating other carrier. Twenty hand-written benign controls that
   contain the same surface forms innocently (traditional-script issues, pinyin, character
-  breakdowns, homophone discussions). Not yet published to Hugging Face; the dataset card
-  template already lists a `v3` config.
+  breakdowns, homophone discussions). Published as the `v3` config on Hugging Face.
 - **v3 detector study** (`results/v3_study.md`, 388 samples: the new ones, their plain
   twins, all benign; rows in `results/rows/v3_study/`, checked by `python -m zhipi.verify`,
   now 12 checks). DeepSeek judge: no loss from any new transform, 1% false positives.

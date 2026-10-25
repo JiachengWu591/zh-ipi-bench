@@ -10,8 +10,8 @@ abstract: >-
   issues, documents, emails, web pages and tool outputs), with Chinese-specific
   obfuscations, benign hard negatives, a detector evaluation harness, and an end-to-end
   test of architectural isolation. Code is MIT; data is CC BY 4.0.
-version: 0.1.0
-date-released: 2026-10-24
+version: 0.2.0
+date-released: 2026-10-25
 repository-code: "https://github.com/JiachengWu591/zh-ipi-bench"
 url: "https://huggingface.co/datasets/JiachengWu591/zh-ipi-bench"
 license: MIT

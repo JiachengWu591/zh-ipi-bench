@@ -8,7 +8,7 @@
 
 *一个面向中文的间接提示注入（indirect prompt injection）基准：指令被藏在 LLM 应用当作“数据”读取的文档、网页、邮件和工具输出里。*
 
-> **状态：v0.1，研究产物。** 单人作者、模板生成的数据、尚无第二标注者。下文每个数字都由
+> **状态：v0.2，研究产物。** 单人作者、模板生成的数据、尚无第二标注者。下文每个数字都由
 > `python -m zhipi.verify` 从已提交的结果行离线复现；[技术报告](paper/REPORT.md)（英文）
 > 说明了每项结果能证明什么、不能证明什么。数据集在 Hugging Face：
 > [JiachengWu591/zh-ipi-bench](https://huggingface.co/datasets/JiachengWu591/zh-ipi-bench)

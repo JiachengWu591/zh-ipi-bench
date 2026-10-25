@@ -8,7 +8,7 @@
 
 *A Chinese-native benchmark for indirect prompt injection: instructions hidden in the documents, web pages, emails, and tool outputs an LLM application reads as data.*
 
-> **Status: v0.1, a research artifact.** One author, template-generated data, no second
+> **Status: v0.2, a research artifact.** One author, template-generated data, no second
 > annotator yet. Every number below is reproduced offline from committed result rows by
 > `python -m zhipi.verify`; the [technical report](paper/REPORT.md) says what each result
 > does and does not show. Data on Hugging Face:
